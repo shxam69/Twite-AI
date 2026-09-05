@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿# Mini Attendance Management System
 
 > **Status: UNDER ACTIVE DEVELOPMENT (Foundation & Architecture Phase)**  
@@ -197,3 +198,7 @@ Make sure the following tools are installed on your machine:
 - [ ] **Phase 3: Employee Management Module (Add, View, Update, Delete with validation)**
 - [ ] **Phase 4: Attendance Management Module (Daily Check-in, Check-out, Status calculation)**
 - [ ] **Phase 5: Analytics Dashboard (Live statistics, metrics, daily summary)**
+=======
+# Twite-AI
+Twite AI Company Technical Assignment Task
+>>>>>>> origin/main
