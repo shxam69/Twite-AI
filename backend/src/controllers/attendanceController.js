@@ -1,4 +1,6 @@
-﻿const attendanceService = require('../services/attendanceService');
+const attendanceService = require('../services/attendanceService');
+const eventService = require('../services/eventService');
+const exportService = require('../services/exportService');
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)(:([0-5]\d))?$/;
@@ -98,16 +100,28 @@ async function markAttendance(req, res, next) {
  */
 async function checkIn(req, res, next) {
   try {
-    const { employee_id } = req.body;
+    let targetEmployeeId;
 
-    if (!employee_id || isNaN(parseInt(employee_id, 10))) {
-      return res.status(400).json({
-        success: false,
-        message: 'A valid employee_id is required.',
-      });
+    if (req.user.role === 'employee') {
+      if (!req.user.employee_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'User account is not linked to an employee record.',
+        });
+      }
+      targetEmployeeId = req.user.employee_id;
+    } else {
+      const { employee_id } = req.body;
+      if (!employee_id || isNaN(parseInt(employee_id, 10))) {
+        return res.status(400).json({
+          success: false,
+          message: 'A valid employee_id is required.',
+        });
+      }
+      targetEmployeeId = parseInt(employee_id, 10);
     }
 
-    const record = await attendanceService.checkIn(parseInt(employee_id, 10));
+    const record = await attendanceService.checkIn(targetEmployeeId);
 
     return res.status(201).json({
       success: true,
@@ -138,16 +152,28 @@ async function checkIn(req, res, next) {
  */
 async function checkOut(req, res, next) {
   try {
-    const { employee_id } = req.body;
+    let targetEmployeeId;
 
-    if (!employee_id || isNaN(parseInt(employee_id, 10))) {
-      return res.status(400).json({
-        success: false,
-        message: 'A valid employee_id is required.',
-      });
+    if (req.user.role === 'employee') {
+      if (!req.user.employee_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'User account is not linked to an employee record.',
+        });
+      }
+      targetEmployeeId = req.user.employee_id;
+    } else {
+      const { employee_id } = req.body;
+      if (!employee_id || isNaN(parseInt(employee_id, 10))) {
+        return res.status(400).json({
+          success: false,
+          message: 'A valid employee_id is required.',
+        });
+      }
+      targetEmployeeId = parseInt(employee_id, 10);
     }
 
-    const record = await attendanceService.checkOut(parseInt(employee_id, 10));
+    const record = await attendanceService.checkOut(targetEmployeeId);
 
     return res.status(200).json({
       success: true,
@@ -172,7 +198,21 @@ async function checkOut(req, res, next) {
  */
 async function getAttendanceRecords(req, res, next) {
   try {
-    const { start_date, end_date, status, employee_id } = req.query;
+    const queryParams = { ...req.query };
+
+    // RBAC: Employees only see their own attendance records
+    if (req.user.role === 'employee') {
+      if (!req.user.employee_id) {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+        });
+      }
+      queryParams.employee_id = req.user.employee_id;
+    }
+
+    const { start_date, end_date, status, employee_id } = queryParams;
 
     if (start_date && !isValidDateString(start_date.trim())) {
       return res.status(400).json({
@@ -209,7 +249,7 @@ async function getAttendanceRecords(req, res, next) {
       });
     }
 
-    const result = await attendanceService.getAttendanceRecords(req.query);
+    const result = await attendanceService.getAttendanceRecords(queryParams);
 
     return res.status(200).json({
       success: true,
@@ -244,6 +284,14 @@ async function getAttendanceById(req, res, next) {
       });
     }
 
+    // RBAC: Employees can only view their own attendance record
+    if (req.user.role === 'employee' && record.employee_id !== req.user.employee_id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. You do not have permission to view another employee\'s attendance record.',
+      });
+    }
+
     return res.status(200).json({
       success: true,
       data: record,
@@ -261,6 +309,18 @@ async function getAttendanceById(req, res, next) {
 async function getEmployeeAttendanceHistory(req, res, next) {
   try {
     const { employeeId } = req.params;
+
+    // RBAC: Employee users can only view their own history
+    if (req.user.role === 'employee') {
+      const empRecord = await attendanceService.findEmployeeByIdOrCode(employeeId);
+      if (!empRecord || empRecord.id !== req.user.employee_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden. You do not have permission to view another employee\'s attendance history.',
+        });
+      }
+    }
+
     const { start_date, end_date, status } = req.query;
 
     if (start_date && !isValidDateString(start_date.trim())) {
@@ -316,7 +376,27 @@ async function getEmployeeAttendanceHistory(req, res, next) {
  */
 async function getAttendanceSummary(req, res, next) {
   try {
-    const { start_date, end_date } = req.query;
+    const queryParams = { ...req.query };
+
+    // RBAC: Employee users get summary strictly for themselves
+    if (req.user.role === 'employee') {
+      if (!req.user.employee_id) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            total_records: 0,
+            present_count: 0,
+            absent_count: 0,
+            late_count: 0,
+            half_day_count: 0,
+            attendance_percentage: 0,
+          },
+        });
+      }
+      queryParams.employee_id = req.user.employee_id;
+    }
+
+    const { start_date, end_date } = queryParams;
 
     if (start_date && !isValidDateString(start_date.trim())) {
       return res.status(400).json({
@@ -339,7 +419,7 @@ async function getAttendanceSummary(req, res, next) {
       });
     }
 
-    const summary = await attendanceService.getAttendanceSummary(req.query);
+    const summary = await attendanceService.getAttendanceSummary(queryParams);
 
     return res.status(200).json({
       success: true,
@@ -356,12 +436,80 @@ async function getAttendanceSummary(req, res, next) {
   }
 }
 
+/**
+ * @desc    Get paginated attendance audit events (Admin only)
+ * @route   GET /api/attendance/events
+ * @access  Private (Admin)
+ */
+async function getAttendanceEvents(req, res, next) {
+  try {
+    const result = await eventService.getAttendanceEvents(req.query);
+    return res.status(200).json({
+      success: true,
+      data: result.records,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * @desc    Update remark on attendance record (Admin only)
+ * @route   PUT /api/attendance/:id/remark
+ * @access  Private (Admin)
+ */
+async function updateAttendanceRemark(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { remark } = req.body;
+    const adminUserId = req.user.id;
+
+    const updated = await attendanceService.updateAttendanceRemark(id, remark, adminUserId);
+    return res.status(200).json({
+      success: true,
+      message: 'Attendance remark updated successfully.',
+      data: updated,
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    next(error);
+  }
+}
+
+/**
+ * @desc    Export attendance report as CSV (Admin only)
+ * @route   GET /api/attendance/export
+ * @access  Private (Admin)
+ */
+async function exportAttendance(req, res, next) {
+  try {
+    const csvData = await exportService.generateAttendanceCsv(req.query);
+    const timestamp = new Date().toISOString().split('T')[0];
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="attendance_report_${timestamp}.csv"`);
+    return res.status(200).send(csvData);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   markAttendance,
   checkIn,
   checkOut,
   getAttendanceRecords,
   getAttendanceById,
+  updateAttendanceRemark,
   getEmployeeAttendanceHistory,
   getAttendanceSummary,
+  getAttendanceEvents,
+  exportAttendance,
 };
+

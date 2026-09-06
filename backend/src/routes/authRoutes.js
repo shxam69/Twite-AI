@@ -1,6 +1,6 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
-const { login, getMe } = require('../controllers/authController');
+const { login, getMe, validateInvitationToken, registerEmployee } = require('../controllers/authController');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 
 /**
@@ -9,6 +9,20 @@ const { authenticateToken, requireAdmin } = require('../middleware/authMiddlewar
  * @access  Public
  */
 router.post('/login', login);
+
+/**
+ * @route   GET /api/auth/register/invitation/:token
+ * @desc    Validate invitation token & fetch safe employee info for registration display
+ * @access  Public
+ */
+router.get('/register/invitation/:token', validateInvitationToken);
+
+/**
+ * @route   POST /api/auth/register/employee
+ * @desc    Self-register an employee account using an invitation token
+ * @access  Public
+ */
+router.post('/register/employee', registerEmployee);
 
 /**
  * @route   GET /api/auth/me

@@ -1,8 +1,11 @@
-﻿const { pool } = require('../config/db');
+const { pool } = require('../config/db');
+const policyService = require('./policyService');
+const eventService = require('./eventService');
+const gpsService = require('./gpsService');
+const qrService = require('./qrService');
 
 /**
- * Standard office start time configuration
- * Check-in after this threshold is marked as 'late'
+ * Standard office start time fallback configuration
  */
 const OFFICE_START_TIME = '09:00:00';
 
@@ -20,6 +23,7 @@ const ALLOWED_SORT_COLUMNS = {
   check_in: 'a.check_in',
   check_out: 'a.check_out',
   status: 'a.status',
+  verification_method: 'a.verification_method',
   created_at: 'a.created_at',
   employee_name: 'e.name',
   employee_code: 'e.employee_id',
@@ -27,25 +31,25 @@ const ALLOWED_SORT_COLUMNS = {
 };
 
 /**
- * Helper to get current server date in YYYY-MM-DD
+ * Helper to get current server date in YYYY-MM-DD (Asia/Kolkata IST)
  */
 function getCurrentDate() {
   const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
 }
 
 /**
- * Helper to get current server time in HH:MM:SS
+ * Helper to get current server time in HH:MM:SS (Asia/Kolkata IST)
  */
 function getCurrentTime() {
   const d = new Date();
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
-  return `${hours}:${minutes}:${seconds}`;
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(d);
 }
 
 /**
@@ -74,13 +78,19 @@ async function findEmployeeByIdOrCode(identifier) {
  * Manually mark/create an attendance record (Admin)
  */
 async function markAttendance(data) {
-  const { employee_id, attendance_date, check_in, check_out, status = 'present' } = data;
+  const { employee_id, attendance_date, check_in, check_out, status = 'present', verification_method = 'ADMIN' } = data;
 
   // 1. Verify employee exists
   const employee = await findEmployee(employee_id);
   if (!employee) {
     const error = new Error('Employee not found.');
     error.status = 404;
+    await eventService.logAttendanceEvent({
+      employee_id,
+      event_type: 'ADMIN_ATTENDANCE_UPDATE',
+      verification_method: 'ADMIN',
+      metadata: { error: 'Employee not found' },
+    });
     throw error;
   }
 
@@ -93,21 +103,39 @@ async function markAttendance(data) {
   if (existing.length > 0) {
     const error = new Error('Attendance record already exists for this employee on this date.');
     error.status = 409;
+    await eventService.logAttendanceEvent({
+      employee_id,
+      event_type: 'ADMIN_ATTENDANCE_UPDATE',
+      verification_method: 'ADMIN',
+      metadata: { error: 'Duplicate attendance record' },
+    });
     throw error;
   }
 
+  const normMethod = ['MANUAL', 'QR', 'WEBAUTHN', 'QR_WEBAUTHN', 'AUTO_LOCATION', 'ADMIN'].includes(verification_method)
+    ? verification_method
+    : 'ADMIN';
+
   // 3. Insert record
   const [result] = await pool.query(
-    `INSERT INTO attendance (employee_id, attendance_date, check_in, check_out, status)
-     VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO attendance (employee_id, attendance_date, check_in, check_out, status, verification_method)
+     VALUES (?, ?, ?, ?, ?, ?)`,
     [
       employee_id,
       attendance_date,
       check_in || null,
       check_out || null,
       status,
+      normMethod,
     ]
   );
+
+  await eventService.logAttendanceEvent({
+    employee_id,
+    event_type: 'ADMIN_ATTENDANCE_UPDATE',
+    verification_method: normMethod,
+    metadata: { attendance_date, status, check_in, check_out },
+  });
 
   return getAttendanceById(result.insertId);
 }
@@ -115,12 +143,20 @@ async function markAttendance(data) {
 /**
  * Check-in for today's date
  */
-async function checkIn(employeeId) {
+async function checkIn(employeeId, options = {}) {
+  const { verification_method = 'MANUAL', metadata = null } = options;
+
   // 1. Verify employee exists
   const employee = await findEmployee(employeeId);
   if (!employee) {
     const error = new Error('Employee not found.');
     error.status = 404;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_IN_FAILED',
+      verification_method,
+      metadata: { reason: 'Employee not found', ...metadata },
+    });
     throw error;
   }
 
@@ -128,6 +164,12 @@ async function checkIn(employeeId) {
   if (employee.status === 'inactive') {
     const error = new Error('Cannot check in inactive employee.');
     error.status = 400;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_IN_FAILED',
+      verification_method,
+      metadata: { reason: 'Employee is inactive', ...metadata },
+    });
     throw error;
   }
 
@@ -143,19 +185,36 @@ async function checkIn(employeeId) {
   if (existing.length > 0) {
     const error = new Error('Attendance record already exists for this employee on this date.');
     error.status = 409;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_IN_FAILED',
+      verification_method,
+      metadata: { reason: 'Duplicate check-in for today', date: today, ...metadata },
+    });
     throw error;
   }
 
-  // 4. Determine status based on office start time
-  // If check-in time is strictly after 09:00:00 -> late, else present
-  const initialStatus = currentTime > OFFICE_START_TIME ? 'late' : 'present';
+  // 4. Dynamic policy lookup for office start time
+  const officeStartTime = (await policyService.getPolicy('office_start_time')) || OFFICE_START_TIME;
+  const initialStatus = currentTime > officeStartTime ? 'late' : 'present';
+
+  const normMethod = ['MANUAL', 'QR', 'WEBAUTHN', 'QR_WEBAUTHN', 'AUTO_LOCATION', 'ADMIN'].includes(verification_method)
+    ? verification_method
+    : 'MANUAL';
 
   // 5. Insert check-in record
   const [result] = await pool.query(
-    `INSERT INTO attendance (employee_id, attendance_date, check_in, status)
-     VALUES (?, ?, ?, ?)`,
-    [employeeId, today, currentTime, initialStatus]
+    `INSERT INTO attendance (employee_id, attendance_date, check_in, status, verification_method)
+     VALUES (?, ?, ?, ?, ?)`,
+    [employeeId, today, currentTime, initialStatus, normMethod]
   );
+
+  await eventService.logAttendanceEvent({
+    employee_id: employeeId,
+    event_type: 'CHECK_IN',
+    verification_method: normMethod,
+    metadata: { check_in_time: currentTime, status: initialStatus, ...metadata },
+  });
 
   return getAttendanceById(result.insertId);
 }
@@ -163,12 +222,20 @@ async function checkIn(employeeId) {
 /**
  * Check-out for today's date
  */
-async function checkOut(employeeId) {
+async function checkOut(employeeId, options = {}) {
+  const { verification_method = 'MANUAL', metadata = null } = options;
+
   // 1. Verify employee exists
   const employee = await findEmployee(employeeId);
   if (!employee) {
     const error = new Error('Employee not found.');
     error.status = 404;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_OUT_FAILED',
+      verification_method,
+      metadata: { reason: 'Employee not found', ...metadata },
+    });
     throw error;
   }
 
@@ -187,6 +254,12 @@ async function checkOut(employeeId) {
   if (existing.length === 0) {
     const error = new Error('No check-in record found for today. Please check in first.');
     error.status = 404;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_OUT_FAILED',
+      verification_method,
+      metadata: { reason: 'No check-in record found for today', date: today, ...metadata },
+    });
     throw error;
   }
 
@@ -196,14 +269,31 @@ async function checkOut(employeeId) {
   if (attendanceRecord.check_out) {
     const error = new Error('Employee has already checked out for today.');
     error.status = 409;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_OUT_FAILED',
+      verification_method,
+      metadata: { reason: 'Already checked out for today', date: today, ...metadata },
+    });
     throw error;
   }
 
+  const normMethod = ['MANUAL', 'QR', 'WEBAUTHN', 'QR_WEBAUTHN', 'AUTO_LOCATION', 'ADMIN'].includes(verification_method)
+    ? verification_method
+    : 'MANUAL';
+
   // 4. Update check_out time while preserving existing check_in and status
   await pool.query(
-    'UPDATE attendance SET check_out = ? WHERE id = ?',
-    [currentTime, attendanceRecord.id]
+    'UPDATE attendance SET check_out = ?, verification_method = ? WHERE id = ?',
+    [currentTime, normMethod, attendanceRecord.id]
   );
+
+  await eventService.logAttendanceEvent({
+    employee_id: employeeId,
+    event_type: 'CHECK_OUT',
+    verification_method: normMethod,
+    metadata: { check_out_time: currentTime, ...metadata },
+  });
 
   return getAttendanceById(attendanceRecord.id);
 }
@@ -272,6 +362,8 @@ async function getAttendanceRecords(query) {
       a.check_in,
       a.check_out,
       a.status,
+      a.verification_method,
+      a.remarks,
       a.created_at,
       a.updated_at
     FROM attendance a
@@ -311,6 +403,8 @@ async function getAttendanceById(id) {
       a.check_in,
       a.check_out,
       a.status,
+      a.verification_method,
+      a.remarks,
       a.created_at,
       a.updated_at
     FROM attendance a
@@ -322,6 +416,40 @@ async function getAttendanceById(id) {
 
   return rows.length > 0 ? rows[0] : null;
 }
+
+/**
+ * Update remarks on an attendance record (Admin only)
+ */
+async function updateAttendanceRemark(id, remark, adminUserId) {
+  const record = await getAttendanceById(id);
+  if (!record) {
+    const error = new Error('Attendance record not found.');
+    error.status = 404;
+    throw error;
+  }
+
+  const trimmedRemark = (remark || '').trim();
+
+  await pool.query(
+    `UPDATE attendance SET remarks = ? WHERE id = ?`,
+    [trimmedRemark, id]
+  );
+
+  await eventService.logAttendanceEvent({
+    employee_id: record.employee_id,
+    event_type: 'ADMIN_ATTENDANCE_UPDATE',
+    verification_method: 'ADMIN',
+    metadata: {
+      attendance_id: id,
+      action: 'UPDATE_REMARK',
+      remark: trimmedRemark,
+      updated_by_user_id: adminUserId,
+    },
+  });
+
+  return await getAttendanceById(id);
+}
+
 
 /**
  * Get attendance history for a specific employee
@@ -411,14 +539,129 @@ async function getAttendanceSummary(query) {
   };
 }
 
+/**
+ * Dynamic Rotating QR Check-in with GPS Geofencing (Employee)
+ */
+async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
+  // 1. Verify employee exists
+  const employee = await findEmployee(employeeId);
+  if (!employee) {
+    const error = new Error('Employee not found.');
+    error.status = 404;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_IN_FAILED',
+      verification_method: 'QR',
+      metadata: { reason: 'Employee not found' },
+    });
+    throw error;
+  }
+
+  // 2. Inactive employees cannot check in
+  if (employee.status === 'inactive') {
+    const error = new Error('Cannot check in inactive employee.');
+    error.status = 400;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_IN_FAILED',
+      verification_method: 'QR',
+      metadata: { reason: 'Employee is inactive' },
+    });
+    throw error;
+  }
+
+  const today = getCurrentDate();
+  const currentTime = getCurrentTime();
+
+  // 3. Obtain connection and begin MySQL transaction
+  const connection = await pool.getConnection();
+  await connection.beginTransaction();
+
+  let challengeId = null;
+  let distanceMeters = null;
+
+  try {
+    // 4. Check duplicate check-in today
+    const [existing] = await connection.query(
+      'SELECT id FROM attendance WHERE employee_id = ? AND attendance_date = ? LIMIT 1',
+      [employeeId, today]
+    );
+
+    if (existing.length > 0) {
+      const error = new Error('Attendance record already exists for this employee on this date.');
+      error.status = 409;
+      throw error;
+    }
+
+    // 5. Authoritative GPS geofence verification
+    const gpsResult = await gpsService.verifyWorkplaceGeofence(latitude, longitude);
+    distanceMeters = gpsResult.distanceMeters;
+
+    // 6. Authoritative QR token validation and per-employee usage recording inside transaction
+    const qrResult = await qrService.validateAndConsumeChallengeForEmployee(rawToken, employeeId, connection);
+    challengeId = qrResult.challenge_id;
+
+    // 7. Calculate status based on office_start_time policy
+    const officeStartTime = (await policyService.getPolicy('office_start_time')) || OFFICE_START_TIME;
+    const initialStatus = currentTime > officeStartTime ? 'late' : 'present';
+
+    // 8. Insert attendance record with verification_method = 'QR'
+    const [insertResult] = await connection.query(
+      `INSERT INTO attendance (employee_id, attendance_date, check_in, status, verification_method)
+       VALUES (?, ?, ?, ?, ?)`,
+      [employeeId, today, currentTime, initialStatus, 'QR']
+    );
+
+    // Commit transaction
+    await connection.commit();
+
+    // 9. Non-blocking audit event
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_IN',
+      verification_method: 'QR',
+      metadata: {
+        challenge_id: challengeId,
+        distance_meters: distanceMeters,
+        location_verified: true,
+        check_in_time: currentTime,
+        status: initialStatus,
+      },
+    });
+
+    return getAttendanceById(insertResult.insertId);
+  } catch (error) {
+    await connection.rollback();
+
+    // Log failure event non-blockingly
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_IN_FAILED',
+      verification_method: 'QR',
+      metadata: {
+        reason: error.message || 'QR Check-in failed',
+        challenge_id: challengeId || undefined,
+        distance_meters: distanceMeters || undefined,
+      },
+    });
+
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   OFFICE_START_TIME,
   VALID_STATUSES,
+  findEmployeeByIdOrCode,
   markAttendance,
   checkIn,
   checkOut,
+  checkInWithQr,
   getAttendanceRecords,
   getAttendanceById,
+  updateAttendanceRemark,
   getEmployeeAttendanceHistory,
   getAttendanceSummary,
 };

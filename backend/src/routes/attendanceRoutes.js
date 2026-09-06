@@ -1,10 +1,47 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const attendanceController = require('../controllers/attendanceController');
+const policyController = require('../controllers/policyController');
+const qrController = require('../controllers/qrController');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 
 // All attendance routes require valid JWT authentication
 router.use(authenticateToken);
+
+/**
+ * @route   POST /api/attendance/qr/generate
+ * @desc    Generate a dynamic rotating QR challenge (Admin only)
+ * @access  Private (Admin only)
+ */
+router.post('/qr/generate', requireAdmin, qrController.generateQr);
+
+/**
+ * @route   POST /api/attendance/qr/check-in
+ * @desc    Check-in with dynamic QR code & GPS geofencing (Employee)
+ * @access  Private (Authenticated)
+ */
+router.post('/qr/check-in', qrController.checkInWithQr);
+
+/**
+ * @route   GET /api/attendance/policies
+ * @desc    Get configured attendance policies
+ * @access  Private (Admin only)
+ */
+router.get('/policies', requireAdmin, policyController.getAllPolicies);
+
+/**
+ * @route   PUT /api/attendance/policies/:key
+ * @desc    Update a specific attendance policy setting
+ * @access  Private (Admin only)
+ */
+router.put('/policies/:key', requireAdmin, policyController.updatePolicy);
+
+/**
+ * @route   GET /api/attendance/events
+ * @desc    Retrieve paginated attendance audit events
+ * @access  Private (Admin only)
+ */
+router.get('/events', requireAdmin, attendanceController.getAttendanceEvents);
 
 /**
  * @route   POST /api/attendance/check-in
@@ -49,6 +86,20 @@ router.post('/', requireAdmin, attendanceController.markAttendance);
 router.get('/', attendanceController.getAttendanceRecords);
 
 /**
+ * @route   PUT /api/attendance/:id/remark
+ * @desc    Update remark on an attendance record (Admin only)
+ * @access  Private (Admin only)
+ */
+router.put('/:id/remark', requireAdmin, attendanceController.updateAttendanceRemark);
+
+/**
+ * @route   GET /api/attendance/export
+ * @desc    Export attendance report as CSV (Admin only)
+ * @access  Private (Admin only)
+ */
+router.get('/export', requireAdmin, attendanceController.exportAttendance);
+
+/**
  * @route   GET /api/attendance/:id
  * @desc    Retrieve single attendance record details by ID
  * @access  Private (Authenticated)
@@ -56,3 +107,4 @@ router.get('/', attendanceController.getAttendanceRecords);
 router.get('/:id', attendanceController.getAttendanceById);
 
 module.exports = router;
+

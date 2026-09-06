@@ -1,10 +1,13 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   getEmployees,
   createEmployee,
   updateEmployee,
   deleteEmployee,
+  createEmployeeInvite,
+  getEmployeeInviteStatus,
+  revokeEmployeeInvite,
 } from '../services/api';
 import EmployeeForm from '../components/EmployeeForm';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -104,11 +107,16 @@ export default function EmployeesPage() {
       if (status) params.status = status;
 
       const res = await getEmployees(params);
-      setEmployees(res.data?.employees || []);
+      const employeeData = Array.isArray(res.data)
+        ? res.data
+        : (res.data?.employees || res.employees || []);
+      const paginationData = res.pagination || res.data?.pagination || {};
+
+      setEmployees(employeeData);
       setPagination({
-        page: res.data?.pagination?.page ?? 1,
-        totalPages: res.data?.pagination?.totalPages ?? 1,
-        total: res.data?.pagination?.total ?? 0,
+        page: paginationData.page ?? 1,
+        totalPages: paginationData.totalPages ?? 1,
+        total: paginationData.total ?? 0,
       });
     } catch (err) {
       setListError(err.message || 'Failed to load employees.');
@@ -171,6 +179,61 @@ export default function EmployeesPage() {
       alert(err.message || 'Failed to deactivate employee.');
     } finally {
       setDeactivateLoading(false);
+    }
+  }
+
+  // ── Invitation handlers ──
+  const [inviteActionLoading, setInviteActionLoading] = useState(null);
+
+  async function handleInviteEmployee(emp) {
+    setInviteActionLoading(emp.id);
+    try {
+      const res = await createEmployeeInvite(emp.id);
+      const url = res.data.registration_url;
+      try {
+        await navigator.clipboard.writeText(url);
+        alert(`Invitation link created & copied to clipboard!\n\nRegistration URL:\n${url}`);
+      } catch (_) {
+        alert(`Invitation link created successfully!\n\nRegistration URL:\n${url}`);
+      }
+      fetchEmployees();
+    } catch (err) {
+      alert(err.message || 'Failed to generate invitation link.');
+    } finally {
+      setInviteActionLoading(null);
+    }
+  }
+
+  async function handleCopyInviteLink(emp) {
+    setInviteActionLoading(emp.id);
+    try {
+      const res = await getEmployeeInviteStatus(emp.id);
+      const resInvite = await createEmployeeInvite(emp.id);
+      const url = resInvite.data.registration_url;
+      try {
+        await navigator.clipboard.writeText(url);
+        alert(`Registration link copied to clipboard!\n\n${url}`);
+      } catch (_) {
+        alert(`Registration link:\n\n${url}`);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to retrieve invitation link.');
+    } finally {
+      setInviteActionLoading(null);
+    }
+  }
+
+  async function handleRevokeInvite(emp) {
+    if (!window.confirm(`Revoke active invitation link for ${emp.name}?`)) return;
+    setInviteActionLoading(emp.id);
+    try {
+      await revokeEmployeeInvite(emp.id);
+      alert('Invitation link revoked successfully.');
+      fetchEmployees();
+    } catch (err) {
+      alert(err.message || 'Failed to revoke invitation.');
+    } finally {
+      setInviteActionLoading(null);
     }
   }
 
@@ -344,6 +407,9 @@ export default function EmployeesPage() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Designation</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
                 {isAdmin && (
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Account / Invitation</th>
+                )}
+                {isAdmin && (
                   <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
                 )}
               </tr>
@@ -353,7 +419,7 @@ export default function EmployeesPage() {
               {listLoading &&
                 [...Array(5)].map((_, i) => (
                   <tr key={i} className="border-b border-slate-100 animate-pulse">
-                    {[...Array(isAdmin ? 8 : 7)].map((__, j) => (
+                    {[...Array(isAdmin ? 9 : 7)].map((__, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-3 bg-slate-200 rounded w-3/4" />
                       </td>
@@ -375,6 +441,42 @@ export default function EmployeesPage() {
                     <td className="px-4 py-3 text-slate-700">{emp.department}</td>
                     <td className="px-4 py-3 text-slate-600">{emp.designation}</td>
                     <td className="px-4 py-3"><StatusBadge status={emp.status} /></td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {emp.has_account ? (
+                          <span className="inline-block px-2.5 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">
+                            Account Created
+                          </span>
+                        ) : emp.pending_invitation ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleCopyInviteLink(emp)}
+                              disabled={inviteActionLoading === emp.id}
+                              className="text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                            >
+                              Copy Link
+                            </button>
+                            <button
+                              onClick={() => handleRevokeInvite(emp)}
+                              disabled={inviteActionLoading === emp.id}
+                              className="text-xs text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                            >
+                              Revoke
+                            </button>
+                          </div>
+                        ) : emp.status === 'active' ? (
+                          <button
+                            onClick={() => handleInviteEmployee(emp)}
+                            disabled={inviteActionLoading === emp.id}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                          >
+                            + Invite Employee
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
+                    )}
                     {isAdmin && (
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <button
@@ -399,7 +501,7 @@ export default function EmployeesPage() {
               {/* Empty state */}
               {!listLoading && employees.length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? 8 : 7} className="px-4 py-14 text-center">
+                  <td colSpan={isAdmin ? 9 : 7} className="px-4 py-14 text-center">
                     <div className="text-3xl mb-2">&#128101;</div>
                     <p className="font-semibold text-slate-600">
                       {searchQuery || department || status

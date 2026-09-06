@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const employeeController = require('../controllers/employeeController');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
@@ -40,5 +40,26 @@ router.put('/:id', requireAdmin, employeeController.updateEmployee);
  * @access  Private (Admin only)
  */
 router.delete('/:id', requireAdmin, employeeController.deleteEmployee);
+
+/**
+ * @route   POST /api/employees/:id/invite
+ * @desc    Generate employee invitation token and link
+ * @access  Private (Admin only)
+ */
+router.post('/:id/invite', requireAdmin, employeeController.createInvitation);
+
+/**
+ * @route   GET /api/employees/:id/invitation
+ * @desc    Get invitation & account status for an employee
+ * @access  Private (Admin only)
+ */
+router.get('/:id/invitation', requireAdmin, employeeController.getInvitationStatus);
+
+/**
+ * @route   POST /api/employees/:id/invite/revoke
+ * @desc    Revoke active invitation link for an employee
+ * @access  Private (Admin only)
+ */
+router.post('/:id/invite/revoke', requireAdmin, employeeController.revokeInvitation);
 
 module.exports = router;

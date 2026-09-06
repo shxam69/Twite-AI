@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import FallingRaysBg from '../components/FallingRaysBg';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -43,30 +44,38 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl mx-auto flex items-center justify-center text-white font-bold text-xl shadow-sm mb-3">
+    <div className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 overflow-hidden bg-slate-950 text-white select-none">
+      {/* Falling Rays Rain of Light Background */}
+      <FallingRaysBg rayCount={50} speedMultiplier={1.2} />
+
+      {/* Ambient background glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-10 right-10 w-72 h-72 bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      {/* Glassmorphism Card */}
+      <div className="relative z-10 max-w-md w-full backdrop-blur-xl bg-slate-900/60 p-8 sm:p-10 rounded-3xl border border-slate-700/60 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-300">
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-2xl mx-auto flex items-center justify-center text-white font-extrabold text-2xl shadow-lg shadow-blue-500/30 mb-4 border border-white/20">
             AMS
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Welcome Back</h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white">Welcome Back</h2>
+          <p className="text-xs text-slate-400 mt-1">
             Sign in to Attendance Management System
           </p>
         </div>
 
         {errorMessage && (
-          <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start space-x-2">
+          <div className="mb-6 p-4 bg-rose-950/50 border border-rose-700/60 rounded-2xl text-xs text-rose-300 flex items-start space-x-3 backdrop-blur-xs">
             <span className="text-base leading-none">⚠️</span>
             <span className="flex-1 font-medium">{errorMessage}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
               htmlFor="username"
-              className="block text-sm font-medium text-slate-700 mb-1"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5"
             >
               Username
             </label>
@@ -79,14 +88,14 @@ export default function LoginPage() {
               placeholder="Enter username"
               required
               autoComplete="username"
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:border-blue-500 transition-all backdrop-blur-xs"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-slate-700 mb-1"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5"
             >
               Password
             </label>
@@ -99,14 +108,14 @@ export default function LoginPage() {
               placeholder="Enter password"
               required
               autoComplete="current-password"
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:border-blue-500 transition-all backdrop-blur-xs"
             />
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm shadow-sm transition-colors flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-sm shadow-xl shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
           >
             {submitting ? (
               <>
@@ -119,8 +128,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-          <p className="text-xs text-slate-400">
+        <div className="mt-8 pt-6 border-t border-slate-800/80 text-center">
+          <p className="text-xs text-slate-500 font-medium">
             Technical Assessment &bull; Secure JWT Authentication
           </p>
         </div>

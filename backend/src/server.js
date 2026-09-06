@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const app = require('./app');
 const { testConnection } = require('./config/db');
 
@@ -14,8 +14,8 @@ async function startServer() {
     console.warn('   (Ensure MySQL is running and attendance_management database is created)');
   }
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on 0.0.0.0:${PORT} (Accessible locally & over LAN)`);
     console.log(`📡 Health endpoint: http://localhost:${PORT}/api/health`);
   });
 }

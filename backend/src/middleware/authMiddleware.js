@@ -1,9 +1,10 @@
-﻿const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const { pool } = require('../config/db');
 
 /**
  * Authentication Middleware
  * Verifies JWT token from Authorization header (Bearer <token>)
- * Attaches decoded payload { id, username, role } to req.user
+ * Resolves fresh user state (id, username, role, employee_id) from DB
  */
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'] || req.headers['Authorization'];
@@ -26,7 +27,7 @@ function authenticateToken(req, res, next) {
 
   const secret = process.env.JWT_SECRET || 'dev_attendance_jwt_secret_key_2026';
 
-  jwt.verify(token, secret, (err, decoded) => {
+  jwt.verify(token, secret, async (err, decoded) => {
     if (err) {
       const message =
         err.name === 'TokenExpiredError'
@@ -39,9 +40,25 @@ function authenticateToken(req, res, next) {
       });
     }
 
-    // Attach decoded user payload to request
-    req.user = decoded;
-    next();
+    try {
+      // Source of truth: resolve current user details and employee_id link from database
+      const [rows] = await pool.query(
+        'SELECT id, username, role, employee_id FROM users WHERE id = ? LIMIT 1',
+        [decoded.id]
+      );
+
+      if (rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: 'User account no longer exists.',
+        });
+      }
+
+      req.user = rows[0];
+      next();
+    } catch (dbErr) {
+      next(dbErr);
+    }
   });
 }
 

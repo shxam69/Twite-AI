@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# SSL / TLS Certificates & Private Keys
+certs/
+*.pem
+*.key
+*.crt
+rootCA*
+

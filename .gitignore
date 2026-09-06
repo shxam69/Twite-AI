@@ -26,3 +26,9 @@ logs/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local SSL Certificates (mkcert)
+certs/
+*.pem
+*.crt
+*.key

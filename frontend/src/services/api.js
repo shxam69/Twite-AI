@@ -2,9 +2,15 @@ import axios from 'axios';
 
 export const TOKEN_KEY = 'attendance_token';
 
-// Normalize base URL without trailing slashes
-const rawBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-const baseURL = rawBaseURL.replace(/\/+$/, '');
+// Dynamic base URL resolution using relative /api path for dev proxy & HTTPS LAN access
+const getDynamicBaseURL = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '');
+  }
+  return '/api';
+};
+
+const baseURL = getDynamicBaseURL();
 
 const api = axios.create({
   baseURL,
@@ -67,6 +73,12 @@ export const getDashboardStats = async () => {
   return response.data;
 };
 
+export const getMyDashboardStats = async () => {
+  const response = await api.get('/dashboard/my-stats');
+  return response.data;
+};
+
+
 /**
  * Employee API calls
  */
@@ -95,4 +107,221 @@ export const deleteEmployee = async (id) => {
   return response.data;
 };
 
+/**
+ * Employee Invitation & Registration API calls
+ */
+export const createEmployeeInvite = async (id) => {
+  const response = await api.post(`/employees/${id}/invite`);
+  return response.data;
+};
+
+export const getEmployeeInviteStatus = async (id) => {
+  const response = await api.get(`/employees/${id}/invitation`);
+  return response.data;
+};
+
+export const revokeEmployeeInvite = async (id) => {
+  const response = await api.post(`/employees/${id}/invite/revoke`);
+  return response.data;
+};
+
+export const validateInviteToken = async (token) => {
+  const response = await api.get(`/auth/register/invitation/${token}`);
+  return response.data;
+};
+
+export const registerEmployee = async (data) => {
+  const response = await api.post('/auth/register/employee', data);
+  return response.data;
+};
+
+/**
+ * Attendance API calls
+ */
+export const checkIn = async () => {
+  // Employee check-in sends empty body {}; identity is derived from JWT
+  const response = await api.post('/attendance/check-in', {});
+  return response.data;
+};
+
+export const checkOut = async () => {
+  // Employee check-out sends empty body {}; identity is derived from JWT
+  const response = await api.post('/attendance/check-out', {});
+  return response.data;
+};
+
+export const getAttendanceRecords = async (params = {}) => {
+  const response = await api.get('/attendance', { params });
+  return response.data;
+};
+
+export const getAttendanceSummary = async (params = {}) => {
+  const response = await api.get('/attendance/summary', { params });
+  return response.data;
+};
+
+export const getEmployeeAttendanceHistory = async (employeeId, params = {}) => {
+  const response = await api.get(`/attendance/employee/${employeeId}`, { params });
+  return response.data;
+};
+
+/**
+ * Dynamic QR Code & GPS Geofencing API calls
+ */
+export const generateQrCode = async () => {
+  const response = await api.post('/attendance/qr/generate');
+  return response.data;
+};
+
+export const checkInWithQr = async (payload) => {
+  const response = await api.post('/attendance/qr/check-in', payload);
+  return response.data;
+};
+
+/**
+ * Attendance Policies API calls (Admin)
+ */
+export const getAttendancePolicies = async () => {
+  const response = await api.get('/attendance/policies');
+  return response.data;
+};
+
+export const updateAttendancePolicy = async (key, value) => {
+  const response = await api.put(`/attendance/policies/${key}`, { value });
+  return response.data;
+};
+
+/**
+ * Attendance Events API calls (Admin)
+ */
+export const getAttendanceEvents = async (params = {}) => {
+  const response = await api.get('/attendance/events', { params });
+  return response.data;
+};
+
+/**
+ * Help Requests API calls
+ */
+export const createHelpRequest = async (data) => {
+  const response = await api.post('/help-requests', data);
+  return response.data;
+};
+
+export const getMyHelpRequests = async () => {
+  const response = await api.get('/help-requests/my');
+  return response.data;
+};
+
+export const getHelpRequests = async (params = {}) => {
+  const response = await api.get('/help-requests', { params });
+  return response.data;
+};
+
+export const getOpenHelpRequestsCount = async () => {
+  const response = await api.get('/help-requests/open-count');
+  return response.data;
+};
+
+export const resolveHelpRequest = async (id) => {
+  const response = await api.patch(`/help-requests/${id}/resolve`);
+  return response.data;
+};
+
+/**
+ * Unified Admin Notification Counts API call
+ */
+export const getAdminNotificationCounts = async () => {
+  const response = await api.get('/dashboard/notifications/counts');
+  return response.data;
+};
+
+/**
+ * Leave Requests API calls
+ */
+export const createLeaveRequest = async (data) => {
+  const response = await api.post('/leave-requests', data);
+  return response.data;
+};
+
+export const getMyLeaveRequests = async () => {
+  const response = await api.get('/leave-requests/my');
+  return response.data;
+};
+
+export const getLeaveRequests = async (params = {}) => {
+  const response = await api.get('/leave-requests', { params });
+  return response.data;
+};
+
+export const getLeaveRequest = async (id) => {
+  const response = await api.get(`/leave-requests/${id}`);
+  return response.data;
+};
+
+export const approveLeaveRequest = async (id, admin_comment = '') => {
+  const response = await api.put(`/leave-requests/${id}/approve`, { admin_comment });
+  return response.data;
+};
+
+export const rejectLeaveRequest = async (id, admin_comment = '') => {
+  const response = await api.put(`/leave-requests/${id}/reject`, { admin_comment });
+  return response.data;
+};
+
+/**
+ * Attendance Correction Requests API calls
+ */
+export const createCorrectionRequest = async (data) => {
+  const response = await api.post('/attendance/corrections', data);
+  return response.data;
+};
+
+export const getMyCorrectionRequests = async () => {
+  const response = await api.get('/attendance/corrections/my');
+  return response.data;
+};
+
+export const getCorrectionRequests = async (params = {}) => {
+  const response = await api.get('/attendance/corrections', { params });
+  return response.data;
+};
+
+export const getCorrectionRequest = async (id) => {
+  const response = await api.get(`/attendance/corrections/${id}`);
+  return response.data;
+};
+
+export const approveCorrectionRequest = async (id, admin_comment = '') => {
+  const response = await api.patch(`/attendance/corrections/${id}/approve`, { admin_comment });
+  return response.data;
+};
+
+export const rejectCorrectionRequest = async (id, admin_comment = '') => {
+  const response = await api.patch(`/attendance/corrections/${id}/reject`, { admin_comment });
+  return response.data;
+};
+
+/**
+ * Attendance Remarks API call (Admin)
+ */
+export const updateAttendanceRemark = async (id, remark) => {
+  const response = await api.put(`/attendance/${id}/remark`, { remark });
+  return response.data;
+};
+
+/**
+ * Export Attendance Report CSV API call (Admin)
+ */
+export const exportAttendanceCsv = async (params = {}) => {
+  const response = await api.get('/attendance/export', {
+    params,
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
 export default api;
+
+
+
+

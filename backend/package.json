@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "attendance-management-backend",
   "version": "1.0.0",
   "description": "Backend API for Mini Attendance Management System",
@@ -25,7 +25,9 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.11.0"
+    "mysql2": "^3.11.0",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

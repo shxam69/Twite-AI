@@ -1,4 +1,5 @@
-﻿const employeeService = require('../services/employeeService');
+const employeeService = require('../services/employeeService');
+const invitationService = require('../services/invitationService');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_STATUSES = ['active', 'inactive'];
@@ -92,7 +93,21 @@ async function createEmployee(req, res, next) {
  */
 async function getEmployees(req, res, next) {
   try {
-    const result = await employeeService.getEmployees(req.query);
+    const queryParams = { ...req.query };
+
+    // RBAC: Non-admin employees can only view their own employee record
+    if (req.user.role === 'employee') {
+      if (!req.user.employee_id) {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+        });
+      }
+      queryParams.id = req.user.employee_id;
+    }
+
+    const result = await employeeService.getEmployees(queryParams);
 
     return res.status(200).json({
       success: true,
@@ -116,6 +131,14 @@ async function getEmployeeById(req, res, next) {
       return res.status(400).json({
         success: false,
         message: 'Invalid employee ID.',
+      });
+    }
+
+    // RBAC: Employees can only view their own record
+    if (req.user.role === 'employee' && id !== req.user.employee_id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. You do not have permission to view another employee\'s details.',
       });
     }
 
@@ -226,10 +249,112 @@ async function deleteEmployee(req, res, next) {
   }
 }
 
+/**
+ * @desc    Generate an employee invitation token and link (Admin)
+ * @route   POST /api/employees/:id/invite
+ * @access  Private (Admin)
+ */
+async function createInvitation(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID.',
+      });
+    }
+
+    const appBaseUrl = req.get('origin') || (req.get('referer') ? new URL(req.get('referer')).origin : '');
+    const result = await invitationService.createInvitation(id, req.user.id, appBaseUrl);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Invitation link generated successfully.',
+      data: result,
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    next(error);
+  }
+}
+
+/**
+ * @desc    Get invitation & account status for an employee (Admin)
+ * @route   GET /api/employees/:id/invitation
+ * @access  Private (Admin)
+ */
+async function getInvitationStatus(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID.',
+      });
+    }
+
+    const result = await invitationService.getInvitationStatus(id);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    next(error);
+  }
+}
+
+/**
+ * @desc    Revoke active invitation link for an employee (Admin)
+ * @route   POST /api/employees/:id/invite/revoke
+ * @access  Private (Admin)
+ */
+async function revokeInvitation(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID.',
+      });
+    }
+
+    const result = await invitationService.revokeInvitation(id);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Invitation revoked successfully.',
+      data: result,
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    next(error);
+  }
+}
+
 module.exports = {
   createEmployee,
   getEmployees,
   getEmployeeById,
   updateEmployee,
   deleteEmployee,
+  createInvitation,
+  getInvitationStatus,
+  revokeInvitation,
 };

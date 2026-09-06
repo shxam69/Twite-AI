@@ -1,19 +1,19 @@
-﻿const { pool } = require('../config/db');
+const { pool } = require('../config/db');
 
 /**
  * Whitelist for sortable columns
  */
 const ALLOWED_SORT_COLUMNS = {
-  id: 'id',
-  employee_id: 'employee_id',
-  name: 'name',
-  email: 'email',
-  mobile: 'mobile',
-  department: 'department',
-  designation: 'designation',
-  status: 'status',
-  created_at: 'created_at',
-  updated_at: 'updated_at',
+  id: 'e.id',
+  employee_id: 'e.employee_id',
+  name: 'e.name',
+  email: 'e.email',
+  mobile: 'e.mobile',
+  department: 'e.department',
+  designation: 'e.designation',
+  status: 'e.status',
+  created_at: 'e.created_at',
+  updated_at: 'e.updated_at',
 };
 
 /**
@@ -87,41 +87,70 @@ async function getEmployees(query) {
   if (search && search.trim()) {
     const term = `%${search.trim()}%`;
     conditions.push(
-      '(employee_id LIKE ? OR name LIKE ? OR email LIKE ? OR mobile LIKE ? OR department LIKE ? OR designation LIKE ?)'
+      '(e.employee_id LIKE ? OR e.name LIKE ? OR e.email LIKE ? OR e.mobile LIKE ? OR e.department LIKE ? OR e.designation LIKE ?)'
     );
     params.push(term, term, term, term, term, term);
   }
 
   // Filter: department
   if (department && department.trim()) {
-    conditions.push('department = ?');
+    conditions.push('e.department = ?');
     params.push(department.trim());
   }
 
   // Filter: status
   if (status && status.trim()) {
-    conditions.push('status = ?');
+    conditions.push('e.status = ?');
     params.push(status.trim().toLowerCase());
+  }
+
+  // Filter: specific primary key id (for RBAC — employee sees only their own record)
+  if (query.id) {
+    conditions.push('e.id = ?');
+    params.push(parseInt(query.id, 10));
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   // Safe sorting with column whitelist
-  const safeSortBy = ALLOWED_SORT_COLUMNS[sortBy] || 'created_at';
+  const safeSortBy = ALLOWED_SORT_COLUMNS[sortBy] || 'e.created_at';
   const safeSortOrder =
     sortOrder && sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-  // Count total records
-  const countSql = `SELECT COUNT(*) AS total FROM employees ${whereClause}`;
+  // Count total records — include same JOINs as dataSql so the alias context
+  // is consistent and MySQL does not raise an ambiguous-column error for `e.id`
+  // (employees, users, and employee_invitations all have an `id` column).
+  const countSql = `
+    SELECT COUNT(DISTINCT e.id) AS total
+    FROM employees e
+    LEFT JOIN users u ON u.employee_id = e.id
+    LEFT JOIN employee_invitations inv ON inv.employee_id = e.id AND inv.used_at IS NULL AND inv.expires_at > NOW()
+    ${whereClause}
+  `;
   const [countResult] = await pool.query(countSql, params);
   const total = countResult[0].total;
   const totalPages = Math.ceil(total / limit) || 1;
 
-  // Retrieve records with parameterized pagination
+  // Retrieve records with parameterized pagination and account/invitation indicators
   const dataSql = `
-    SELECT id, employee_id, name, email, mobile, department, designation, status, created_at, updated_at
-    FROM employees
+    SELECT 
+      e.id, 
+      e.employee_id, 
+      e.name, 
+      e.email, 
+      e.mobile, 
+      e.department, 
+      e.designation, 
+      e.status, 
+      e.created_at, 
+      e.updated_at,
+      IF(u.id IS NOT NULL, 1, 0) AS has_account,
+      IF(MAX(inv.id) IS NOT NULL, 1, 0) AS pending_invitation
+    FROM employees e
+    LEFT JOIN users u ON u.employee_id = e.id
+    LEFT JOIN employee_invitations inv ON inv.employee_id = e.id AND inv.used_at IS NULL AND inv.expires_at > NOW()
     ${whereClause}
+    GROUP BY e.id
     ORDER BY ${safeSortBy} ${safeSortOrder}
     LIMIT ? OFFSET ?
   `;
