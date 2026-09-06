@@ -5,25 +5,132 @@
 
 ---
 
-## 📋 Table of Contents
-1. [System Architecture](#1-system-architecture)
-2. [Tech Stack](#2-tech-stack)
-3. [Setup & Installation Instructions](#3-setup--installation-instructions)
-4. [Environment Variables](#4-environment-variables)
-5. [Database Schema & Migrations](#5-database-schema--migrations)
-6. [API Documentation & Swagger UI](#6-api-documentation--swagger-ui)
-7. [Security Model & RBAC Rules](#7-security-model--rbac-rules)
-8. [Dynamic Rotating QR Code & GPS Geofencing (Phase 8C)](#8-dynamic-rotating-qr-code--gps-geofencing-phase-8c)
-9. [Physical Android Phone LAN Testing Walkthrough](#9-physical-android-phone-lan-testing-walkthrough)
-10. [Leave Request & Approval System (Phase A)](#10-leave-request--approval-system-phase-a)
-11. [Attendance Remarks & Corrections (Phase B & C)](#11-attendance-remarks--corrections-phase-b--c)
-12. [Audit Event Timeline & Event Logs (Phase D)](#12-audit-event-timeline--event-logs-phase-d)
-13. [Admin Action Notifications Center (Phase E)](#13-admin-action-notifications-center-phase-e)
-14. [Dashboard Analytics & Currently In Office Features (Phase F & H)](#14-dashboard-analytics--currently-in-office-features-phase-f--h)
-15. [Report Export to CSV (Phase I)](#15-report-export-to-csv-phase-i)
-16. [Docker Deployment Guide (Phase M)](#16-docker-deployment-guide-phase-m)
-17. [Automated Test Suites & Verification Commands (Phase K)](#17-automated-test-suites--verification-commands-phase-k)
-18. [Known Limitations & Future Enhancements (Phase N)](#18-known-limitations--future-enhancements-phase-n)
+8: ## 📋 Table of Contents
+9: 1. [System Architecture](#1-system-architecture)
+10: 2. [Tech Stack](#2-tech-stack)
+11: 3. [Production Deployment (Render)](#3-production-deployment-render)
+12: 4. [Setup & Installation Instructions](#4-setup--installation-instructions)
+13: 5. [Environment Variables](#5-environment-variables)
+14: 6. [Database Schema & Migrations](#6-database-schema--migrations)
+15: 7. [API Documentation & Swagger UI](#7-api-documentation--swagger-ui)
+16: 8. [Security Model & RBAC Rules](#8-security-model--rbac-rules)
+17: 9. [Dynamic Rotating QR Code & GPS Geofencing (Phase 8C)](#9-dynamic-rotating-qr-code--gps-geofencing-phase-8c)
+18: 10. [Physical Android Phone LAN Testing Walkthrough](#10-physical-android-phone-lan-testing-walkthrough)
+19: 11. [Leave Request & Approval System (Phase A)](#11-leave-request--approval-system-phase-a)
+20: 12. [Attendance Remarks & Corrections (Phase B & C)](#12-attendance-remarks--corrections-phase-b--c)
+21: 13. [Audit Event Timeline & Event Logs (Phase D)](#13-audit-event-timeline--event-logs-phase-d)
+22: 14. [Admin Action Notifications Center (Phase E)](#14-admin-action-notifications-center-phase-e)
+23: 15. [Dashboard Analytics & Currently In Office Features (Phase F & H)](#15-dashboard-analytics--currently-in-office-features-phase-f--h)
+24: 16. [Report Export to CSV (Phase I)](#16-report-export-to-csv-phase-i)
+25: 17. [Docker Deployment Guide (Phase M)](#17-docker-deployment-guide-phase-m)
+26: 18. [Automated Test Suites & Verification Commands (Phase K)](#18-automated-test-suites--verification-commands-phase-k)
+27: 19. [Known Limitations & Future Enhancements (Phase N)](#19-known-limitations--future-enhancements-phase-n)
+
+---
+
+## 3. Production Deployment (Render)
+
+The system is fully configured for continuous deployment on **Render** (or any cloud hosting platform).
+
+### 1. Backend Render Service Setup
+- **Service Type**: Web Service
+- **Environment**: Node.js
+- **Root Directory**: `backend`
+- **Build Command**: `npm install`
+- **Start Command**: `npm start`
+- **Health Check Path**: `/api/health`
+- **Public URL**: `https://<BACKEND-RENDER-URL>`
+
+### 2. Frontend Render Static Site Setup
+- **Service Type**: Static Site
+- **Environment**: Static
+- **Root Directory**: `frontend`
+- **Build Command**: `npm install && npm run build`
+- **Publish Directory**: `dist`
+- **SPA Routing Rewrite Rule**:
+  - Source: `/*`
+  - Destination: `/index.html`
+  - Action: Rewrite (200)
+
+---
+
+### 3. Render Required Environment Variables
+
+#### BACKEND ENVIRONMENT VARIABLES
+Configure these in Render Web Service Dashboard (Environment tab):
+
+```env
+# Server Binding (Render automatically assigns PORT)
+PORT=10000
+NODE_ENV=production
+
+# Public Backend Domain (Used for Swagger URLs & OAuth links)
+BACKEND_PUBLIC_URL=https://<YOUR-BACKEND-RENDER-URL>.onrender.com
+
+# Database Connection (MySQL 8 / Aiven / PlanetScale / Render Database)
+DB_HOST=<YOUR_DB_HOST>
+DB_PORT=3306
+DB_USER=<YOUR_DB_USER>
+DB_PASSWORD=<YOUR_DB_PASSWORD>
+DB_NAME=<YOUR_DB_NAME>
+# OR single connection URI:
+# DATABASE_URL=mysql://user:pass@host:3306/dbname
+
+# JWT Authentication
+JWT_SECRET=<RANDOM_HIGH_ENTROPY_64_CHAR_SECRET>
+JWT_EXPIRES_IN=1d
+
+# CORS & Trusted Frontend Origins
+ALLOWED_ORIGINS=https://<YOUR-FRONTEND-RENDER-URL>.onrender.com
+FRONTEND_URL=https://<YOUR-FRONTEND-RENDER-URL>.onrender.com
+
+# Attendance & Geofence Default Configuration
+WORKPLACE_LATITUDE=28.613939
+WORKPLACE_LONGITUDE=77.209021
+WORKPLACE_RADIUS_METERS=100
+QR_VALIDITY_SECONDS=30
+```
+
+#### FRONTEND ENVIRONMENT VARIABLES
+Configure this in Render Static Site Dashboard:
+
+```env
+# Production API Base URL pointing to deployed Render Express Backend
+VITE_API_BASE_URL=https://<YOUR-BACKEND-RENDER-URL>.onrender.com/api
+```
+
+---
+
+### 4. Production API Root & Endpoints
+
+- **Production API Base**: `https://<BACKEND-RENDER-URL>/api`
+- **Swagger / OpenAPI UI**: `https://<BACKEND-RENDER-URL>/api/docs`
+- **Public Health Check**: `https://<BACKEND-RENDER-URL>/api/health`
+
+---
+
+### 5. Local vs Production Environment Differences
+
+| Feature | Local Development | Render Production |
+| :--- | :--- | :--- |
+| **API Base URL** | `/api` (proxied via Vite) or `http://localhost:5000/api` | `https://<BACKEND-RENDER-URL>/api` (from `VITE_API_BASE_URL`) |
+| **HTTPS Certificates** | `mkcert` self-signed certs in `certs/` for LAN mobile QR camera access | Render Managed SSL (automatic Let's Encrypt HTTPS) |
+| **Server Port** | Fixed `5000` | Dynamic `process.env.PORT` (e.g. 10000) binding to `0.0.0.0` |
+| **CORS** | Permits `localhost:5173`, `127.0.0.1:5173` | Restricted to `ALLOWED_ORIGINS` / `FRONTEND_URL` |
+| **SPA Routing** | Handled natively by Vite dev server | Configured via `render.yaml` rewrite `/* -> /index.html` |
+
+---
+
+### 6. Testing the Deployed Application
+
+1. **Verify Health Endpoint**:
+   Open `https://<BACKEND-RENDER-URL>/api/health` in your browser. Expected response: `{"status":"ok","database":{"connected":true...}}`.
+2. **Verify Swagger Documentation**:
+   Open `https://<BACKEND-RENDER-URL>/api/docs`. Test authorization using the **Authorize** button with `Bearer <JWT_TOKEN>`.
+3. **Verify Frontend SPA Navigation & Refresh**:
+   Log in at `https://<FRONTEND-RENDER-URL>/login`. Navigate to `/dashboard`, `/employees`, `/attendance`, `/leaves`, `/attendance/corrections`, `/qr-display`. Hard refresh (`Ctrl+F5` / `Cmd+R`) on any route to confirm 200 SPA rewrite fallback works without 404 errors.
+4. **Verify Attendance Flow**:
+   Test manual check-in/out, leave application submission, correction request workflow, and dynamic QR scanner on mobile browser.
 
 ---
 
