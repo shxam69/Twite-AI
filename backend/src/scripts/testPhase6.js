@@ -13,10 +13,16 @@ async function runTests() {
   console.log('--- PHASE 6 VERIFICATION SUITE ---');
 
   // 0. Ensure employee 1 and employee 2 exist in DB
-  const [emps] = await pool.query('SELECT id, employee_id, name FROM employees LIMIT 2');
+  let [emps] = await pool.query("SELECT id, employee_id, name FROM employees WHERE employee_id IN ('EMP-001', 'EMP-002') ORDER BY id ASC");
   if (emps.length < 2) {
-    console.error('Need at least 2 employees in DB');
-    process.exit(1);
+    await pool.query(
+      `INSERT INTO employees (employee_id, name, email, mobile, department, designation, status)
+       VALUES 
+       ('EMP-001', 'Alice Johnson', 'alice@company.com', '+1234567890', 'Engineering', 'Senior Software Engineer', 'active'),
+       ('EMP-002', 'Bob Smith', 'bob@company.com', '+1234567891', 'Marketing', 'Product Manager', 'active')
+       ON DUPLICATE KEY UPDATE name = VALUES(name)`
+    );
+    [emps] = await pool.query("SELECT id, employee_id, name FROM employees WHERE employee_id IN ('EMP-001', 'EMP-002') ORDER BY id ASC");
   }
   const emp1 = emps[0];
   const emp2 = emps[1];
@@ -25,13 +31,13 @@ async function runTests() {
   // Link user emp_user1 to emp1.id
   const passHash = await bcrypt.hash('EmpPass@123', 10);
   await pool.query(
-    'INSERT INTO users (username, password, role, employee_id) VALUES (?, ?, "employee", ?) ON DUPLICATE KEY UPDATE password = ?, role = "employee", employee_id = ?',
+    "INSERT INTO users (username, password, role, employee_id) VALUES (?, ?, 'employee', ?) ON DUPLICATE KEY UPDATE password = ?, role = 'employee', employee_id = ?",
     ['emp_user1', passHash, emp1.id, passHash, emp1.id]
   );
 
   // Link user emp_user2 to emp2.id
   await pool.query(
-    'INSERT INTO users (username, password, role, employee_id) VALUES (?, ?, "employee", ?) ON DUPLICATE KEY UPDATE password = ?, role = "employee", employee_id = ?',
+    "INSERT INTO users (username, password, role, employee_id) VALUES (?, ?, 'employee', ?) ON DUPLICATE KEY UPDATE password = ?, role = 'employee', employee_id = ?",
     ['emp_user2', passHash, emp2.id, passHash, emp2.id]
   );
 
@@ -117,15 +123,18 @@ async function runTests() {
   console.log(`13. Admin employee list count: ${adminList.data?.length} (Expected: all records)`);
 
   // 14. DB Source of Truth Test: Update users.employee_id in DB to another employee (e.g. employee 3), verify immediate effect on next request with SAME token
-  const [emp3Rows] = await pool.query('SELECT id FROM employees WHERE id NOT IN (?, ?) LIMIT 1', [emp1.id, emp2.id]);
+  const [emp3Rows] = await pool.query(
+    "SELECT id FROM employees WHERE id NOT IN (?, ?) AND id NOT IN (SELECT employee_id FROM users WHERE employee_id IS NOT NULL AND username != 'emp_user1') LIMIT 1",
+    [emp1.id, emp2.id]
+  );
   const emp3Id = emp3Rows[0]?.id || 3;
 
-  await pool.query('UPDATE users SET employee_id = ? WHERE username = "emp_user1"', [emp3Id]);
+  await pool.query("UPDATE users SET employee_id = ? WHERE username = 'emp_user1'", [emp3Id]);
   const meRes = await fetch('http://localhost:5000/api/auth/me', { headers: emp1Headers }).then((r) => r.json());
   console.log(`14. DB Source of Truth test - resolved employee_id: ${meRes.user?.employee_id} (Expected updated ID: ${emp3Id})`);
 
   // Revert back
-  await pool.query('UPDATE users SET employee_id = ? WHERE username = "emp_user1"', [emp1.id]);
+  await pool.query("UPDATE users SET employee_id = ? WHERE username = 'emp_user1'", [emp1.id]);
   console.log('--- ALL PHASE 6 TESTS PASSED SUCCESSFULLY ---');
 
   await pool.end();

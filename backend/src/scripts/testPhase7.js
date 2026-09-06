@@ -18,10 +18,10 @@ async function runTests() {
   const adminHeaders = { Authorization: 'Bearer ' + adminToken, 'Content-Type': 'application/json' };
 
   // 1.5 Cleanup previous test run data for idempotency
-  await pool.query('DELETE FROM users WHERE username IN ("INV_EMP_01", "INV_EMP_02", "INV_EMP_03")');
-  await pool.query('DELETE FROM employee_invitations WHERE employee_id IN (SELECT id FROM employees WHERE employee_id IN ("INV_EMP_01", "INV_EMP_02", "INV_EMP_03"))');
-  await pool.query('DELETE FROM attendance WHERE employee_id IN (SELECT id FROM employees WHERE employee_id IN ("INV_EMP_01", "INV_EMP_02", "INV_EMP_03"))');
-  await pool.query('DELETE FROM employees WHERE employee_id IN ("INV_EMP_01", "INV_EMP_02", "INV_EMP_03")');
+  await pool.query("DELETE FROM users WHERE username IN ('INV_EMP_01', 'INV_EMP_02', 'INV_EMP_03')");
+  await pool.query("DELETE FROM employee_invitations WHERE employee_id IN (SELECT id FROM employees WHERE employee_id IN ('INV_EMP_01', 'INV_EMP_02', 'INV_EMP_03'))");
+  await pool.query("DELETE FROM attendance WHERE employee_id IN (SELECT id FROM employees WHERE employee_id IN ('INV_EMP_01', 'INV_EMP_02', 'INV_EMP_03'))");
+  await pool.query("DELETE FROM employees WHERE employee_id IN ('INV_EMP_01', 'INV_EMP_02', 'INV_EMP_03')");
 
   // 2. Create a clean test employee for invitation
   const createEmpRes = await fetch('http://localhost:5000/api/employees', {

@@ -97,7 +97,7 @@ async function runTests() {
     body: JSON.stringify({}),
   }).then((r) => r.json());
 
-  const [inEvents] = await pool.query('SELECT event_type, verification_method FROM attendance_events WHERE employee_id = ? AND event_type = "CHECK_IN" ORDER BY id DESC LIMIT 1', [emp1Id]);
+  const [inEvents] = await pool.query("SELECT event_type, verification_method FROM attendance_events WHERE employee_id = ? AND event_type = 'CHECK_IN' ORDER BY id DESC LIMIT 1", [emp1Id]);
   console.log(`12. Check-in success: ${checkInRes.success} | Event created: ${inEvents[0]?.event_type} (${inEvents[0]?.verification_method})`);
 
   // 13. Successful Check-out creates CHECK_OUT event
@@ -107,7 +107,7 @@ async function runTests() {
     body: JSON.stringify({}),
   }).then((r) => r.json());
 
-  const [outEvents] = await pool.query('SELECT event_type, verification_method FROM attendance_events WHERE employee_id = ? AND event_type = "CHECK_OUT" ORDER BY id DESC LIMIT 1', [emp1Id]);
+  const [outEvents] = await pool.query("SELECT event_type, verification_method FROM attendance_events WHERE employee_id = ? AND event_type = 'CHECK_OUT' ORDER BY id DESC LIMIT 1", [emp1Id]);
   console.log(`13. Check-out success: ${checkOutRes.success} | Event created: ${outEvents[0]?.event_type} (${outEvents[0]?.verification_method})`);
 
   // 14. Failed duplicate Check-in creates CHECK_IN_FAILED event
@@ -117,7 +117,7 @@ async function runTests() {
     body: JSON.stringify({}),
   });
 
-  const [failedInEvents] = await pool.query('SELECT event_type FROM attendance_events WHERE employee_id = ? AND event_type = "CHECK_IN_FAILED" ORDER BY id DESC LIMIT 1', [emp1Id]);
+  const [failedInEvents] = await pool.query("SELECT event_type FROM attendance_events WHERE employee_id = ? AND event_type = 'CHECK_IN_FAILED' ORDER BY id DESC LIMIT 1", [emp1Id]);
   console.log(`14. Failed check-in event logged? ${failedInEvents.length > 0} (Expected: true)`);
 
   // 15. Failed duplicate Check-out creates CHECK_OUT_FAILED event
@@ -127,7 +127,7 @@ async function runTests() {
     body: JSON.stringify({}),
   });
 
-  const [failedOutEvents] = await pool.query('SELECT event_type FROM attendance_events WHERE employee_id = ? AND event_type = "CHECK_OUT_FAILED" ORDER BY id DESC LIMIT 1', [emp1Id]);
+  const [failedOutEvents] = await pool.query("SELECT event_type FROM attendance_events WHERE employee_id = ? AND event_type = 'CHECK_OUT_FAILED' ORDER BY id DESC LIMIT 1", [emp1Id]);
   console.log(`15. Failed check-out event logged? ${failedOutEvents.length > 0} (Expected: true)`);
 
   // 16. Audit Metadata Sanitization Test

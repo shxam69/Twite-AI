@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "migrate": "node src/scripts/migrateFinal.js",
     "seed:admin": "node src/scripts/seedAdmin.js"
   },
   "keywords": [

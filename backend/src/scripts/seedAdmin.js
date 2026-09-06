@@ -1,45 +1,75 @@
-﻿require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 
 async function seedAdmin() {
-  const username = process.env.ADMIN_DEFAULT_USER || 'admin';
-  const password = process.env.ADMIN_DEFAULT_PASSWORD || 'Admin@123';
-  const role = 'admin';
+  const adminUsername = process.env.ADMIN_DEFAULT_USER || 'admin';
+  const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'Admin@123';
 
-  console.log('🌱 Starting admin seed process...');
-  console.log(`👤 Target admin username: ${username}`);
+  console.log('🌱 Starting admin & test user seed process...');
 
   try {
-    // Check if user already exists
-    const [existing] = await pool.query(
-      'SELECT id, username, role FROM users WHERE username = ?',
-      [username]
+    // 1. Seed Admin User
+    const [adminCheck] = await pool.query(
+      'SELECT id FROM users WHERE username = ? LIMIT 1',
+      [adminUsername]
     );
 
-    if (existing.length > 0) {
-      console.log(`ℹ️  Admin user "${username}" already exists (ID: ${existing[0].id}). Skipping seed.`);
-      process.exit(0);
+    if (adminCheck.length === 0) {
+      const hashedAdminPass = await bcrypt.hash(adminPassword, 10);
+      const [res] = await pool.query(
+        'INSERT INTO users (username, password, role) VALUES (?, ?, "admin")',
+        [adminUsername, hashedAdminPass]
+      );
+      console.log(`✅ Created Admin user "${adminUsername}" (User ID: ${res.insertId}).`);
+    } else {
+      console.log(`ℹ️  Admin user "${adminUsername}" already exists.`);
     }
 
-    // Hash password with bcryptjs
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // 2. Seed Test Employee Records (EMP-001 & EMP-002)
+    await pool.query(`
+      INSERT INTO employees (employee_id, name, email, mobile, department, designation, status)
+      VALUES 
+      ('EMP-001', 'Alice Johnson', 'alice@company.com', '+1234567890', 'Engineering', 'Senior Software Engineer', 'active'),
+      ('EMP-002', 'Bob Smith', 'bob@company.com', '+1234567891', 'Marketing', 'Product Manager', 'active')
+      ON DUPLICATE KEY UPDATE name = VALUES(name)
+    `);
 
-    // Insert new admin user
-    const [result] = await pool.query(
-      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      [username, hashedPassword, role]
+    const [empRows] = await pool.query(
+      "SELECT id, employee_id FROM employees WHERE employee_id IN ('EMP-001', 'EMP-002') ORDER BY id ASC"
     );
 
-    console.log('✅ Admin user created successfully!');
-    console.log(`   ID: ${result.insertId}`);
-    console.log(`   Username: ${username}`);
-    console.log(`   Default Password: ${password}`);
-    console.log('⚠️  Please change the default password after first login.');
+    const emp1 = empRows.find((r) => r.employee_id === 'EMP-001');
+    const emp2 = empRows.find((r) => r.employee_id === 'EMP-002');
+
+    const hashedEmpPass = await bcrypt.hash('EmpPass@123', 10);
+
+    if (emp1) {
+      await pool.query(
+        `INSERT INTO users (username, password, role, employee_id)
+         VALUES ('emp_user1', ?, 'employee', ?)
+         ON DUPLICATE KEY UPDATE password = VALUES(password), employee_id = VALUES(employee_id)`,
+        [hashedEmpPass, emp1.id]
+      );
+      console.log(`✅ Seeded employee user "emp_user1" linked to Employee ID ${emp1.id}.`);
+    }
+
+    if (emp2) {
+      await pool.query(
+        `INSERT INTO users (username, password, role, employee_id)
+         VALUES ('emp_user2', ?, 'employee', ?)
+         ON DUPLICATE KEY UPDATE password = VALUES(password), employee_id = VALUES(employee_id)`,
+        [hashedEmpPass, emp2.id]
+      );
+      console.log(`✅ Seeded employee user "emp_user2" linked to Employee ID ${emp2.id}.`);
+    }
+
+    console.log('🎉 Seed process completed successfully.');
+    await pool.end();
     process.exit(0);
   } catch (error) {
-    console.error('❌ Failed to seed admin user:', error.message);
+    console.error('❌ Failed to seed database:', error.message);
+    await pool.end();
     process.exit(1);
   }
 }

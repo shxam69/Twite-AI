@@ -200,11 +200,11 @@ async function runTests() {
   console.log(`17. Attendance verification_method = QR? ${emp1Rec[0]?.verification_method === 'QR'} (Expected: true)`);
 
   // 18. Successful audit event created
-  const [successEvents] = await pool.query('SELECT event_type, verification_method, metadata FROM attendance_events WHERE employee_id = ? AND event_type = "CHECK_IN" AND verification_method = "QR" ORDER BY id DESC LIMIT 1', [emp1Id]);
+  const [successEvents] = await pool.query("SELECT event_type, verification_method, metadata FROM attendance_events WHERE employee_id = ? AND event_type = 'CHECK_IN' AND verification_method = 'QR' ORDER BY id DESC LIMIT 1", [emp1Id]);
   console.log(`18. CHECK_IN audit event created with verification_method = QR? ${successEvents.length > 0} (Expected: true)`);
 
   // 19. Failed audit event created
-  const [failEvents] = await pool.query('SELECT event_type, verification_method FROM attendance_events WHERE employee_id = ? AND event_type = "CHECK_IN_FAILED" ORDER BY id DESC LIMIT 1', [emp1Id]);
+  const [failEvents] = await pool.query("SELECT event_type, verification_method FROM attendance_events WHERE employee_id = ? AND event_type = 'CHECK_IN_FAILED' ORDER BY id DESC LIMIT 1", [emp1Id]);
   console.log(`19. CHECK_IN_FAILED audit event logged? ${failEvents.length > 0} (Expected: true)`);
 
   // 20. Audit metadata does NOT contain raw token
