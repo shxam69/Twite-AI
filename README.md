@@ -84,12 +84,13 @@ JWT_EXPIRES_IN=1d
 ALLOWED_ORIGINS=https://<YOUR-FRONTEND-RENDER-URL>.onrender.com
 FRONTEND_URL=https://<YOUR-FRONTEND-RENDER-URL>.onrender.com
 
-# Attendance & Geofence Default Configuration
-WORKPLACE_LATITUDE=28.613939
-WORKPLACE_LONGITUDE=77.209021
-WORKPLACE_RADIUS_METERS=100
-QR_VALIDITY_SECONDS=30
+# Note: Attendance & Geofence policies (workplace_latitude, workplace_longitude,
+# workplace_radius_meters, qr_validity_seconds, etc.) are managed dynamically via
+# the attendance_policies database table and Admin UI, NOT via environment variables.
 ```
+
+> [!NOTE]
+> **Database Initialization & Migrations**: Database schema creation and initial seeding (`node backend/src/scripts/migrateFinal.js` and `seedAdmin.js`) are a **deliberate one-time manual production setup operation**. They must NOT be configured as Render's automated build or start command.
 
 #### FRONTEND ENVIRONMENT VARIABLES
 Configure this in Render Static Site Dashboard:
@@ -236,10 +237,7 @@ DB_NAME=attendance_management
 JWT_SECRET=dev_attendance_jwt_secret_key_2026
 JWT_EXPIRES_IN=8h
 ALLOWED_ORIGINS=http://localhost:5173,https://localhost:5173
-WORKPLACE_LATITUDE=28.613939
-WORKPLACE_LONGITUDE=77.209021
-WORKPLACE_RADIUS_METERS=100
-QR_VALIDITY_SECONDS=30
+FRONTEND_URL=http://localhost:5173
 ```
 
 ---
