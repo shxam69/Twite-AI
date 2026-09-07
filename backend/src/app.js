@@ -41,15 +41,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Root route
-app.get('/', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    message: 'Attendance Management API is running',
-    version: '1.0.0',
-    documentation: '/api/docs',
-  });
-});
+const path = require('path');
+const fs = require('fs');
 
 // Swagger Documentation UI
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -63,6 +56,39 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/help-requests', helpRoutes);
 app.use('/api/leave-requests', leaveRoutes);
+
+// Static frontend serving & SPA fallback for single deployment
+const frontendDistPath = path.resolve(process.cwd(), 'frontend', 'dist');
+console.log('Frontend dist path:', frontendDistPath);
+console.log(
+  'Frontend index exists:',
+  fs.existsSync(path.join(frontendDistPath, 'index.html'))
+);
+const hasFrontendBuild = fs.existsSync(path.join(frontendDistPath, 'index.html'));
+
+if (hasFrontendBuild) {
+  // Serve static assets from frontend/dist
+  app.use(express.static(frontendDistPath));
+
+  // SPA Fallback for client-side React Router navigation
+  app.get('*', (req, res, next) => {
+    // Unmatched /api/* routes fall through to JSON 404 handler
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+} else {
+  // Development / API-only root route
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      message: 'Attendance Management API is running',
+      version: '1.0.0',
+      documentation: '/api/docs',
+    });
+  });
+}
 
 // Error Handling Middleware
 app.use(notFound);
