@@ -15,22 +15,29 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 const app = express();
 
 // CORS Configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS
+const defaultOrigins = [
+  'https://twite-ai-1.onrender.com',
+  'http://localhost:5173',
+  'https://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5000',
+  'https://localhost:5000',
+];
+
+const envOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
   : process.env.FRONTEND_URL
   ? [process.env.FRONTEND_URL.trim()]
-  : ['http://localhost:5173', 'https://localhost:5173', 'http://127.0.0.1:5173'];
+  : [];
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, swagger-ui)
+      // Allow requests with no origin (like same-origin requests, mobile apps, curl, swagger-ui)
       if (!origin) return callback(null, true);
-      if (
-        allowedOrigins.includes('*') ||
-        allowedOrigins.includes(origin) ||
-        process.env.NODE_ENV !== 'production'
-      ) {
+      if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
         return callback(null, true);
       }
       return callback(new Error(`CORS policy error: Origin ${origin} is not allowed`));
