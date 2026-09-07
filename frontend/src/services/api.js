@@ -168,13 +168,56 @@ export const getEmployeeAttendanceHistory = async (employeeId, params = {}) => {
 /**
  * Dynamic QR Code & GPS Geofencing API calls
  */
-export const generateQrCode = async () => {
-  const response = await api.post('/attendance/qr/generate');
+export const generateQrCode = async (purpose = 'CHECK_IN') => {
+  const response = await api.post('/attendance/qr/generate', { purpose });
   return response.data;
 };
 
 export const checkInWithQr = async (payload) => {
   const response = await api.post('/attendance/qr/check-in', payload);
+  return response.data;
+};
+
+export const checkOutWithQr = async (payload) => {
+  const response = await api.post('/attendance/qr/check-out', payload);
+  return response.data;
+};
+
+/**
+ * Rewards API calls
+ */
+export const getMyRewardAccount = async () => {
+  const response = await api.get('/rewards/my-account');
+  return response.data;
+};
+
+export const getRewardsCatalog = async (includeInactive = false) => {
+  const response = await api.get('/rewards/catalog', { params: { includeInactive } });
+  return response.data;
+};
+
+export const redeemRewardItem = async (reward_id) => {
+  const response = await api.post('/rewards/redeem', { reward_id });
+  return response.data;
+};
+
+export const createRewardItem = async (data) => {
+  const response = await api.post('/rewards', data);
+  return response.data;
+};
+
+export const updateRewardItem = async (id, data) => {
+  const response = await api.put(`/rewards/${id}`, data);
+  return response.data;
+};
+
+export const getAllRedemptions = async (status) => {
+  const response = await api.get('/rewards/redemptions', { params: { status } });
+  return response.data;
+};
+
+export const updateRedemptionStatus = async (id, status) => {
+  const response = await api.patch(`/rewards/redemptions/${id}`, { status });
   return response.data;
 };
 

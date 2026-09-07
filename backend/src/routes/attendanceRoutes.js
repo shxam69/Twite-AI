@@ -23,6 +23,13 @@ router.post('/qr/generate', requireAdmin, qrController.generateQr);
 router.post('/qr/check-in', qrController.checkInWithQr);
 
 /**
+ * @route   POST /api/attendance/qr/check-out
+ * @desc    Check-out with dynamic QR code & GPS geofencing (Employee)
+ * @access  Private (Authenticated)
+ */
+router.post('/qr/check-out', qrController.checkOutWithQr);
+
+/**
  * @route   GET /api/attendance/policies
  * @desc    Get configured attendance policies
  * @access  Private (Admin only)

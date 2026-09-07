@@ -30,7 +30,8 @@ function hashToken(rawToken) {
 /**
  * Generate cryptographically secure QR challenge (Admin only)
  */
-async function generateChallenge(userId) {
+async function generateChallenge(userId, purpose = 'CHECK_IN') {
+  const validPurpose = purpose === 'CHECK_OUT' ? 'CHECK_OUT' : 'CHECK_IN';
   const validitySecondsStr = await policyService.getPolicy('qr_validity_seconds');
   const validity_seconds = Math.max(5, parseInt(validitySecondsStr, 10) || 30);
 
@@ -40,14 +41,15 @@ async function generateChallenge(userId) {
   const expires_at = getIstDateTime(validity_seconds);
 
   await pool.query(
-    `INSERT INTO qr_challenges (challenge_id, token_hash, expires_at, created_by)
-     VALUES (?, ?, ?, ?)`,
-    [challenge_id, token_hash, expires_at, userId]
+    `INSERT INTO qr_challenges (challenge_id, token_hash, purpose, expires_at, created_by)
+     VALUES (?, ?, ?, ?, ?)`,
+    [challenge_id, token_hash, validPurpose, expires_at, userId]
   );
 
   return {
     challenge_id,
     rawToken,
+    purpose: validPurpose,
     expires_at,
     validity_seconds,
   };
@@ -56,7 +58,7 @@ async function generateChallenge(userId) {
 /**
  * Validate QR token and record per-employee single use inside an active MySQL transaction
  */
-async function validateAndConsumeChallengeForEmployee(rawToken, employeeId, connection) {
+async function validateAndConsumeChallengeForEmployee(rawToken, employeeId, expectedPurpose = 'CHECK_IN', connection) {
   if (!rawToken || typeof rawToken !== 'string' || !rawToken.trim()) {
     const error = new Error('Invalid QR token format.');
     error.status = 400;
@@ -68,7 +70,7 @@ async function validateAndConsumeChallengeForEmployee(rawToken, employeeId, conn
 
   // 1. Find challenge by token hash with row lock
   const [challenges] = await dbClient.query(
-    `SELECT id, challenge_id, token_hash, expires_at 
+    `SELECT id, challenge_id, token_hash, purpose, expires_at 
      FROM qr_challenges 
      WHERE token_hash = ? 
      FOR UPDATE`,
@@ -83,9 +85,15 @@ async function validateAndConsumeChallengeForEmployee(rawToken, employeeId, conn
 
   const challenge = challenges[0];
 
-  // 2. Check expiration against current IST time
-  const nowStr = getIstDateTime(0);
-  const expiresStr = new Date(challenge.expires_at).toISOString();
+  // 2. Validate challenge purpose
+  if (expectedPurpose && challenge.purpose !== expectedPurpose) {
+    const actionLabel = expectedPurpose === 'CHECK_IN' ? 'check-in' : 'check-out';
+    const error = new Error(`Invalid QR code for ${actionLabel}. Please scan a ${expectedPurpose} QR code.`);
+    error.status = 400;
+    throw error;
+  }
+
+  // 3. Check expiration against current IST time
   const nowMs = Date.now();
   const expiresMs = new Date(challenge.expires_at).getTime();
 
@@ -95,7 +103,7 @@ async function validateAndConsumeChallengeForEmployee(rawToken, employeeId, conn
     throw error;
   }
 
-  // 3. Check per-employee single-use replay protection
+  // 4. Check per-employee single-use replay protection
   const [existingUses] = await dbClient.query(
     `SELECT id FROM qr_challenge_uses WHERE challenge_id = ? AND employee_id = ? LIMIT 1`,
     [challenge.id, employeeId]
@@ -107,7 +115,7 @@ async function validateAndConsumeChallengeForEmployee(rawToken, employeeId, conn
     throw error;
   }
 
-  // 4. Atomically insert per-employee usage record
+  // 5. Atomically insert per-employee usage record
   try {
     await dbClient.query(
       `INSERT INTO qr_challenge_uses (challenge_id, employee_id) VALUES (?, ?)`,
@@ -125,6 +133,7 @@ async function validateAndConsumeChallengeForEmployee(rawToken, employeeId, conn
   return {
     id: challenge.id,
     challenge_id: challenge.challenge_id,
+    purpose: challenge.purpose,
     expires_at: challenge.expires_at,
   };
 }

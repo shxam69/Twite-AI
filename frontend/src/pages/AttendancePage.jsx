@@ -8,6 +8,9 @@ import {
   getAttendanceRecords,
   getAttendanceSummary,
   exportAttendanceCsv,
+  getMyRewardAccount,
+  getRewardsCatalog,
+  redeemRewardItem,
 } from '../services/api';
 
 // --- Helper Functions ---
@@ -278,9 +281,16 @@ export default function AttendancePage() {
   const [tableLoading, setTableLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  // QR Scanner & Help Request Modal States
+  // QR Scanner & Help Request & Rewards Modal States
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrPurpose, setQrPurpose] = useState('CHECK_IN');
   const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const [rewardModalOpen, setRewardModalOpen] = useState(false);
+
+  // Rewards State
+  const [rewardAccount, setRewardAccount] = useState(null);
+  const [rewardsCatalog, setRewardsCatalog] = useState([]);
+  const [redeemLoadingId, setRedeemLoadingId] = useState(null);
 
   // Action states
   const [actionLoading, setActionLoading] = useState(false);
@@ -295,6 +305,45 @@ export default function AttendancePage() {
   };
 
   const todayStr = now.toISOString().split('T')[0];
+
+  const fetchRewardAccount = useCallback(async () => {
+    if (!isEmployee) return;
+    try {
+      const res = await getMyRewardAccount();
+      if (res.success) {
+        setRewardAccount(res.data);
+      }
+    } catch (err) {
+      console.error('Error fetching reward account:', err);
+    }
+  }, [isEmployee]);
+
+  const openRewardsCatalog = async () => {
+    setRewardModalOpen(true);
+    try {
+      const res = await getRewardsCatalog(false);
+      if (res.success) {
+        setRewardsCatalog(res.data || []);
+      }
+    } catch (err) {
+      showFeedback('error', 'Failed to load rewards catalog.');
+    }
+  };
+
+  const handleRedeem = async (rewardId) => {
+    setRedeemLoadingId(rewardId);
+    try {
+      const res = await redeemRewardItem(rewardId);
+      showFeedback('success', res.message || 'Reward redeemed successfully!');
+      await fetchRewardAccount();
+      const updatedCatalog = await getRewardsCatalog(false);
+      setRewardsCatalog(updatedCatalog.data || []);
+    } catch (err) {
+      showFeedback('error', err.message || 'Failed to redeem reward.');
+    } finally {
+      setRedeemLoadingId(null);
+    }
+  };
 
   // Fetch today's record for employee
   const fetchTodayRecord = useCallback(async () => {
@@ -344,7 +393,10 @@ export default function AttendancePage() {
     fetchTodayRecord();
     fetchSummary();
     fetchHistory(1, filters);
-  }, [fetchTodayRecord, fetchSummary, fetchHistory, filters]);
+    if (isEmployee) {
+      fetchRewardAccount();
+    }
+  }, [fetchTodayRecord, fetchSummary, fetchHistory, fetchRewardAccount, filters, isEmployee]);
 
   // Handle Check In
   const handleCheckInAction = async () => {
@@ -357,6 +409,7 @@ export default function AttendancePage() {
       await fetchTodayRecord();
       await fetchSummary();
       await fetchHistory(1, filters);
+      await fetchRewardAccount();
     } catch (err) {
       showFeedback('error', err.message || 'Check-in failed. Please try again.');
     } finally {
@@ -375,6 +428,7 @@ export default function AttendancePage() {
       await fetchTodayRecord();
       await fetchSummary();
       await fetchHistory(1, filters);
+      await fetchRewardAccount();
     } catch (err) {
       showFeedback('error', err.message || 'Check-out failed. Please try again.');
     } finally {
@@ -387,6 +441,7 @@ export default function AttendancePage() {
     await fetchTodayRecord();
     await fetchSummary();
     await fetchHistory(1, filters);
+    await fetchRewardAccount();
   };
 
   // Handle CSV Export
@@ -441,6 +496,7 @@ export default function AttendancePage() {
             isOpen={qrModalOpen}
             onClose={() => setQrModalOpen(false)}
             onSuccess={handleQrSuccess}
+            purpose={qrPurpose}
           />
           <HelpRequestModal
             isOpen={helpModalOpen}
@@ -551,21 +607,46 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          {/* Primary Action: QR Code Check-in */}
+          {/* Primary Action: QR Code Check-In */}
           {isNotCheckedIn && hasLinkedProfile && (
             <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-blue-200 block">Dynamic QR Verification</span>
                 <p className="text-base font-bold">Check In with Dynamic Rotating QR Code</p>
-                <p className="text-xs text-blue-100">Scans office QR code & verifies workplace GPS geofence.</p>
+                <p className="text-xs text-blue-100">Scans office Check-In QR code & verifies workplace GPS geofence.</p>
               </div>
 
               <button
-                onClick={() => setQrModalOpen(true)}
+                onClick={() => {
+                  setQrPurpose('CHECK_IN');
+                  setQrModalOpen(true);
+                }}
                 className="px-5 py-2.5 bg-white text-blue-700 hover:bg-blue-50 font-bold text-sm rounded-lg shadow-sm transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer"
               >
                 <span>📷</span>
                 <span>Scan QR & Check In</span>
+              </button>
+            </div>
+          )}
+
+          {/* Primary Action: QR Code Check-Out */}
+          {isCheckedIn && hasLinkedProfile && (
+            <div className="p-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-200 block">Dynamic QR Verification & Rewards</span>
+                <p className="text-base font-bold">Check Out with Dynamic Check-Out QR Code</p>
+                <p className="text-xs text-emerald-100">Verifies location geofence & automatically awards extra hours reward points.</p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setQrPurpose('CHECK_OUT');
+                  setQrModalOpen(true);
+                }}
+                className="px-5 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-bold text-sm rounded-lg shadow-sm transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer"
+              >
+                <span>📷</span>
+                <span>Scan QR & Check Out</span>
               </button>
             </div>
           )}
@@ -608,6 +689,121 @@ export default function AttendancePage() {
               <span>💬</span>
               <span>Need Help / Having Issues?</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Extra Hours Reward Wallet Banner for Employee */}
+      {isEmployee && (
+        <div className="bg-gradient-to-br from-amber-50 via-amber-100/40 to-orange-50 border border-amber-200/80 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl font-bold shadow-sm shrink-0">
+              🪙
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-bold text-slate-800 text-base">Extra Hours Reward Wallet</h3>
+                <span className="bg-amber-200/80 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">
+                  Active
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Earn points for working beyond standard shift hours. Redeem points for catalog rewards!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="text-right border-r border-amber-200 pr-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">Available Balance</span>
+              <span className="text-2xl font-extrabold text-amber-600 font-mono">
+                {rewardAccount?.points_balance ?? 0} <span className="text-xs font-semibold text-amber-700">pts</span>
+              </span>
+            </div>
+
+            <button
+              onClick={openRewardsCatalog}
+              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5"
+            >
+              <span>🎁</span>
+              <span>Redeem Rewards</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Rewards Catalog Redemption Modal */}
+      {rewardModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-amber-50/50">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg">
+                  🎁
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base">Employee Rewards Catalog</h3>
+                  <p className="text-xs text-slate-500">Your Balance: <strong className="text-amber-600">{rewardAccount?.points_balance ?? 0} pts</strong></p>
+                </div>
+              </div>
+              <button onClick={() => setRewardModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              {rewardsCatalog.length === 0 ? (
+                <p className="text-center text-slate-400 py-8 text-sm">No rewards currently available in catalog.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {rewardsCatalog.map((item) => {
+                    const canAfford = (rewardAccount?.points_balance ?? 0) >= item.points_cost;
+                    const hasStock = item.stock_quantity > 0;
+                    const isLoadingThis = redeemLoadingId === item.id;
+                    return (
+                      <div key={item.id} className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs space-y-2 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-start justify-between">
+                            <h4 className="font-bold text-slate-800 text-sm">{item.title}</h4>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                              {item.points_cost} pts
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">{item.description}</p>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400 font-medium">
+                            Stock: {item.stock_quantity} left
+                          </span>
+
+                          <button
+                            onClick={() => handleRedeem(item.id)}
+                            disabled={!canAfford || !hasStock || isLoadingThis}
+                            className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${
+                              canAfford && hasStock && !isLoadingThis
+                                ? 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer shadow-2xs'
+                                : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                            }`}
+                          >
+                            {isLoadingThis ? 'Redeeming...' : !hasStock ? 'Out of Stock' : !canAfford ? 'Need More Points' : 'Redeem Now'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setRewardModalOpen(false)}
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-100 cursor-pointer"
+              >
+                Close Catalog
+              </button>
+            </div>
           </div>
         </div>
       )}

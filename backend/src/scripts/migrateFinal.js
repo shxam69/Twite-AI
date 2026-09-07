@@ -218,6 +218,8 @@ async function migrate() {
   const defaultPolicies = [
     ['office_start_time', '09:00:00', 'Standard office start time for late calculation'],
     ['minimum_checkout_hours', '4', 'Minimum working hours required before check-out'],
+    ['standard_work_hours', '8', 'Standard shift working hours for extra hours calculation'],
+    ['reward_points_per_extra_hour', '100', 'Reward points awarded per completed extra working hour'],
     ['workplace_radius_meters', '100', 'Allowed geofence radius in meters'],
     ['qr_validity_seconds', '30', 'Dynamic QR code expiration duration'],
     ['auto_checkout_enabled', 'false', 'Enable or disable automatic EOD checkout'],
@@ -245,11 +247,13 @@ async function migrate() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         challenge_id VARCHAR(64) NOT NULL UNIQUE,
         token_hash VARCHAR(64) NOT NULL UNIQUE,
+        purpose ENUM('CHECK_IN', 'CHECK_OUT') NOT NULL DEFAULT 'CHECK_IN',
         expires_at DATETIME NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         created_by INT NOT NULL,
         INDEX idx_qr_challenge_id (challenge_id),
         INDEX idx_qr_token_hash (token_hash),
+        INDEX idx_qr_purpose (purpose),
         INDEX idx_qr_expires_at (expires_at),
         CONSTRAINT fk_qr_created_by
           FOREIGN KEY (created_by) REFERENCES users(id)
@@ -260,6 +264,14 @@ async function migrate() {
     console.log('✅ [CREATED] Table "qr_challenges" created successfully.');
   } else {
     console.log('ℹ️  [ALREADY PRESENT] Table "qr_challenges" exists.');
+    if (!(await columnExists('qr_challenges', 'purpose'))) {
+      await pool.query(`
+        ALTER TABLE qr_challenges
+        ADD COLUMN purpose ENUM('CHECK_IN', 'CHECK_OUT') NOT NULL DEFAULT 'CHECK_IN' AFTER token_hash,
+        ADD INDEX idx_qr_purpose (purpose)
+      `);
+      console.log('  ✅ [CREATED] Added column "purpose" to table "qr_challenges".');
+    }
   }
 
   // Step 8: qr_challenge_uses table
@@ -398,7 +410,117 @@ async function migrate() {
     console.log('ℹ️  [ALREADY PRESENT] Table "attendance_correction_requests" exists.');
   }
 
-  // Verification step: Verify all 11 required tables exist
+  // Step 13: employee_reward_accounts table
+  if (!(await tableExists('employee_reward_accounts'))) {
+    await pool.query(`
+      CREATE TABLE employee_reward_accounts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        employee_id INT NOT NULL UNIQUE,
+        balance INT NOT NULL DEFAULT 0,
+        total_earned INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_reward_acc_employee
+          FOREIGN KEY (employee_id) REFERENCES employees(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ [CREATED] Table "employee_reward_accounts" created successfully.');
+  } else {
+    console.log('ℹ️  [ALREADY PRESENT] Table "employee_reward_accounts" exists.');
+  }
+
+  // Step 14: employee_reward_transactions table
+  if (!(await tableExists('employee_reward_transactions'))) {
+    await pool.query(`
+      CREATE TABLE employee_reward_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        employee_id INT NOT NULL,
+        amount INT NOT NULL,
+        type ENUM('EXTRA_HOURS_EARNED', 'REWARD_REDEEMED', 'ADMIN_ADJUSTMENT', 'REFUND') NOT NULL,
+        reference_id INT NULL,
+        description VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_reward_tx_emp (employee_id),
+        INDEX idx_reward_tx_type (type),
+        CONSTRAINT fk_reward_tx_employee
+          FOREIGN KEY (employee_id) REFERENCES employees(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ [CREATED] Table "employee_reward_transactions" created successfully.');
+  } else {
+    console.log('ℹ️  [ALREADY PRESENT] Table "employee_reward_transactions" exists.');
+  }
+
+  // Step 15: rewards catalog table
+  if (!(await tableExists('rewards'))) {
+    await pool.query(`
+      CREATE TABLE rewards (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description VARCHAR(255) NULL,
+        points_cost INT NOT NULL,
+        status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_rewards_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ [CREATED] Table "rewards" created successfully.');
+  } else {
+    console.log('ℹ️  [ALREADY PRESENT] Table "rewards" exists.');
+  }
+
+  // Seed default rewards catalog items
+  const defaultRewards = [
+    ['☕ Gourmet Coffee Voucher', 'Redeem for a fresh barista coffee at the workplace cafe', 100],
+    ['🍱 Premium Lunch Coupon', 'Full complimentary gourmet lunch voucher', 300],
+    ['🎁 Company Merchandise Gift', 'Exclusive branded workplace hoodie or mug set', 500],
+    ['🍿 Movie Ticket Pass', 'Complimentary weekend cinema e-voucher', 400],
+  ];
+
+  for (const [name, desc, cost] of defaultRewards) {
+    await pool.query(
+      `INSERT INTO rewards (name, description, points_cost, status)
+       SELECT ?, ?, ?, 'active'
+       WHERE NOT EXISTS (SELECT id FROM rewards WHERE name = ?)`,
+      [name, desc, cost, name]
+    );
+  }
+  console.log('✅ [SEEDED] Default reward catalog items verified.');
+
+  // Step 16: reward_redemptions table
+  if (!(await tableExists('reward_redemptions'))) {
+    await pool.query(`
+      CREATE TABLE reward_redemptions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        employee_id INT NOT NULL,
+        reward_id INT NOT NULL,
+        points_spent INT NOT NULL,
+        status ENUM('PENDING', 'APPROVED', 'FULFILLED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_redemptions_emp (employee_id),
+        INDEX idx_redemptions_reward (reward_id),
+        INDEX idx_redemptions_status (status),
+        CONSTRAINT fk_redemption_employee
+          FOREIGN KEY (employee_id) REFERENCES employees(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_redemption_reward
+          FOREIGN KEY (reward_id) REFERENCES rewards(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ [CREATED] Table "reward_redemptions" created successfully.');
+  } else {
+    console.log('ℹ️  [ALREADY PRESENT] Table "reward_redemptions" exists.');
+  }
+
+  // Verification step: Verify all required tables exist
   const requiredTables = [
     'employees',
     'users',
@@ -411,6 +533,10 @@ async function migrate() {
     'help_requests',
     'leave_requests',
     'attendance_correction_requests',
+    'employee_reward_accounts',
+    'employee_reward_transactions',
+    'rewards',
+    'reward_redemptions',
   ];
 
   console.log('\n--------------------------------------------------');

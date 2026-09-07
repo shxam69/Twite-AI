@@ -3,6 +3,7 @@ const policyService = require('./policyService');
 const eventService = require('./eventService');
 const gpsService = require('./gpsService');
 const qrService = require('./qrService');
+const rewardService = require('./rewardService');
 
 /**
  * Standard office start time fallback configuration
@@ -598,7 +599,7 @@ async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
     distanceMeters = gpsResult.distanceMeters;
 
     // 6. Authoritative QR token validation and per-employee usage recording inside transaction
-    const qrResult = await qrService.validateAndConsumeChallengeForEmployee(rawToken, employeeId, connection);
+    const qrResult = await qrService.validateAndConsumeChallengeForEmployee(rawToken, employeeId, 'CHECK_IN', connection);
     challengeId = qrResult.challenge_id;
 
     // 7. Calculate status based on office_start_time policy
@@ -651,6 +652,154 @@ async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
   }
 }
 
+/**
+ * Dynamic Rotating QR Check-out with GPS Geofencing & Reward Points (Employee)
+ */
+async function checkOutWithQr(employeeId, rawToken, latitude, longitude) {
+  // 1. Verify employee exists
+  const employee = await findEmployee(employeeId);
+  if (!employee) {
+    const error = new Error('Employee not found.');
+    error.status = 404;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_OUT_FAILED',
+      verification_method: 'QR',
+      metadata: { reason: 'Employee not found' },
+    });
+    throw error;
+  }
+
+  // 2. Inactive employees cannot check out
+  if (employee.status === 'inactive') {
+    const error = new Error('Cannot check out inactive employee.');
+    error.status = 400;
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_OUT_FAILED',
+      verification_method: 'QR',
+      metadata: { reason: 'Employee is inactive' },
+    });
+    throw error;
+  }
+
+  const today = getCurrentDate();
+  const currentTime = getCurrentTime();
+
+  // 3. Obtain connection and begin MySQL transaction
+  const connection = await pool.getConnection();
+  await connection.beginTransaction();
+
+  let challengeId = null;
+  let distanceMeters = null;
+
+  try {
+    // 4. Find open attendance record for today (must be checked in, check_out IS NULL)
+    const [existing] = await connection.query(
+      `SELECT id, check_in, check_out, status 
+       FROM attendance 
+       WHERE employee_id = ? AND attendance_date = ? 
+       FOR UPDATE`,
+      [employeeId, today]
+    );
+
+    if (existing.length === 0) {
+      const error = new Error('No check-in record found for today. You must check in before checking out.');
+      error.status = 400;
+      throw error;
+    }
+
+    const attendance = existing[0];
+
+    if (attendance.check_out) {
+      const error = new Error('Employee has already checked out for today.');
+      error.status = 400;
+      throw error;
+    }
+
+    if (!attendance.check_in) {
+      const error = new Error('No check-in time recorded for today.');
+      error.status = 400;
+      throw error;
+    }
+
+    // 5. Check minimum checkout hours policy
+    const minHoursStr = await policyService.getPolicy('minimum_checkout_hours');
+    const minHours = parseFloat(minHoursStr) || 4;
+    const workedSeconds = getWorkedDurationInSeconds(attendance.check_in, currentTime);
+    const workedHours = workedSeconds / 3600;
+
+    if (workedHours < minHours) {
+      const error = new Error(
+        `Minimum working duration of ${minHours} hours not met. (Current: ${workedHours.toFixed(1)} hrs)`
+      );
+      error.status = 400;
+      throw error;
+    }
+
+    // 6. Authoritative GPS geofence verification
+    const gpsResult = await gpsService.verifyWorkplaceGeofence(latitude, longitude);
+    distanceMeters = gpsResult.distanceMeters;
+
+    // 7. Authoritative QR token validation with expectedPurpose = 'CHECK_OUT'
+    const qrResult = await qrService.validateAndConsumeChallengeForEmployee(rawToken, employeeId, 'CHECK_OUT', connection);
+    challengeId = qrResult.challenge_id;
+
+    // 8. Update attendance record with check_out time
+    await connection.query(
+      `UPDATE attendance SET check_out = ? WHERE id = ?`,
+      [currentTime, attendance.id]
+    );
+
+    // 9. Transactional Extra Hours Reward Calculation & Ledger Insertion
+    const rewardResult = await rewardService.awardExtraHoursPoints(
+      employeeId,
+      attendance.id,
+      workedSeconds,
+      connection
+    );
+
+    // Commit transaction
+    await connection.commit();
+
+    // 10. Non-blocking audit event
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_OUT',
+      verification_method: 'QR',
+      metadata: {
+        challenge_id: challengeId,
+        distance_meters: distanceMeters,
+        location_verified: true,
+        check_out_time: currentTime,
+        worked_seconds: workedSeconds,
+        extra_hours: rewardResult.extraHours || 0,
+        points_awarded: rewardResult.pointsAwarded || 0,
+      },
+    });
+
+    return getAttendanceById(attendance.id);
+  } catch (error) {
+    await connection.rollback();
+
+    // Log failure event non-blockingly
+    await eventService.logAttendanceEvent({
+      employee_id: employeeId,
+      event_type: 'CHECK_OUT_FAILED',
+      verification_method: 'QR',
+      metadata: {
+        reason: error.message || 'QR Check-out failed',
+        challenge_id: challengeId || undefined,
+        distance_meters: distanceMeters || undefined,
+      },
+    });
+
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   OFFICE_START_TIME,
   VALID_STATUSES,
@@ -659,6 +808,7 @@ module.exports = {
   checkIn,
   checkOut,
   checkInWithQr,
+  checkOutWithQr,
   getAttendanceRecords,
   getAttendanceById,
   updateAttendanceRemark,

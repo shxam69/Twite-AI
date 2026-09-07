@@ -68,6 +68,54 @@ export default function AuditTimelinePage() {
     }
   };
 
+  const getResultBadge = (evt) => {
+    const isFailed = evt.event_type && evt.event_type.endsWith('_FAILED');
+    const metadata = evt.metadata || {};
+    if (isFailed) {
+      const reason = metadata.reason || metadata.error || 'Verification Failed';
+      return (
+        <div className="flex items-center space-x-2">
+          <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200">
+            Failed ({reason})
+          </span>
+          {evt.metadata && Object.keys(evt.metadata).length > 0 && (
+            <button
+              onClick={() => setSelectedMetadata(evt.metadata)}
+              className="text-[11px] text-slate-400 hover:text-blue-600 hover:underline font-medium cursor-pointer ml-1"
+              title="Inspect Raw Event Payload"
+            >
+              Details
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    let label = 'Success';
+    if (metadata.distance_meters !== undefined && metadata.distance_meters !== null) {
+      label = `Verified (${Math.round(metadata.distance_meters)}m away)`;
+    } else if (evt.verification_method === 'ADMIN') {
+      label = 'Admin Updated';
+    }
+
+    return (
+      <div className="flex items-center space-x-2">
+        <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          {label}
+        </span>
+        {evt.metadata && Object.keys(evt.metadata).length > 0 && (
+          <button
+            onClick={() => setSelectedMetadata(evt.metadata)}
+            className="text-[11px] text-slate-400 hover:text-blue-600 hover:underline font-medium cursor-pointer ml-1"
+            title="Inspect Raw Event Payload"
+          >
+            Details
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Page Header */}
@@ -163,9 +211,9 @@ export default function AuditTimelinePage() {
               <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
                 <th className="py-3.5 px-5">Timestamp</th>
                 <th className="py-3.5 px-5">Employee</th>
-                <th className="py-3.5 px-5">Event Type</th>
+                <th className="py-3.5 px-5">Event</th>
                 <th className="py-3.5 px-5">Method</th>
-                <th className="py-3.5 px-5">Metadata Details</th>
+                <th className="py-3.5 px-5">Result</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -198,14 +246,7 @@ export default function AuditTimelinePage() {
                     </td>
                     <td className="py-4 px-5">{getEventBadge(evt.event_type)}</td>
                     <td className="py-4 px-5">{getMethodBadge(evt.verification_method)}</td>
-                    <td className="py-4 px-5">
-                      <button
-                        onClick={() => setSelectedMetadata(evt.metadata)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-mono font-medium underline cursor-pointer"
-                      >
-                        Inspect Safe Metadata ({Object.keys(evt.metadata || {}).length} keys)
-                      </button>
-                    </td>
+                    <td className="py-4 px-5">{getResultBadge(evt)}</td>
                   </tr>
                 ))
               ) : (

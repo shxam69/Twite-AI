@@ -266,7 +266,7 @@ async function deleteEmployee(id) {
     throw error;
   }
 
-  await pool.query('UPDATE employees SET status = "inactive" WHERE id = ?', [id]);
+  await pool.query('UPDATE employees SET status = ? WHERE id = ?', ['inactive', id]);
 
   return {
     id: existing.id,

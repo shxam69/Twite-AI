@@ -99,3 +99,76 @@ CREATE TABLE IF NOT EXISTS attendance (
   INDEX idx_attendance_employee_id (employee_id),
   INDEX idx_attendance_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------------------------------------------------------
+-- 4. Employee Reward Accounts
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS employee_reward_accounts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  employee_id INT NOT NULL UNIQUE,
+  balance INT NOT NULL DEFAULT 0,
+  total_earned INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reward_acc_employee
+    FOREIGN KEY (employee_id) REFERENCES employees(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------------------------------------------------------
+-- 5. Employee Reward Transactions
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS employee_reward_transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  employee_id INT NOT NULL,
+  amount INT NOT NULL,
+  type ENUM('EXTRA_HOURS_EARNED', 'REWARD_REDEEMED', 'ADMIN_ADJUSTMENT', 'REFUND') NOT NULL,
+  reference_id INT NULL,
+  description VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_reward_tx_emp (employee_id),
+  INDEX idx_reward_tx_type (type),
+  CONSTRAINT fk_reward_tx_employee
+    FOREIGN KEY (employee_id) REFERENCES employees(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------------------------------------------------------
+-- 6. Rewards Catalog
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS rewards (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  description VARCHAR(255) NULL,
+  points_cost INT NOT NULL,
+  status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_rewards_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------------------------------------------------------
+-- 7. Reward Redemptions
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reward_redemptions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  employee_id INT NOT NULL,
+  reward_id INT NOT NULL,
+  points_spent INT NOT NULL,
+  status ENUM('PENDING', 'APPROVED', 'FULFILLED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_redemptions_emp (employee_id),
+  INDEX idx_redemptions_reward (reward_id),
+  INDEX idx_redemptions_status (status),
+  CONSTRAINT fk_redemption_employee
+    FOREIGN KEY (employee_id) REFERENCES employees(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_redemption_reward
+    FOREIGN KEY (reward_id) REFERENCES rewards(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

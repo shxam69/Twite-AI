@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { checkInWithQr } from '../services/api';
+import { checkInWithQr, checkOutWithQr } from '../services/api';
 
-export default function QrScannerModal({ isOpen, onClose, onSuccess }) {
+export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = 'CHECK_IN' }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [manualMode, setManualMode] = useState(false);
@@ -130,18 +130,25 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess }) {
         });
       }
 
-      const response = await checkInWithQr({
+      const payload = {
         token: rawToken,
         latitude: lat,
         longitude: lon,
-      });
+      };
+
+      const apiFn = purpose === 'CHECK_OUT' ? checkOutWithQr : checkInWithQr;
+      const response = await apiFn(payload);
 
       if (response.success) {
-        onSuccess(response.message || 'Check-in recorded successfully via QR!');
+        let msg = response.message || `${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} recorded successfully via QR!`;
+        if (purpose === 'CHECK_OUT' && response.points_awarded > 0) {
+          msg += ` 🎉 Earned ${response.points_awarded} Reward Points!`;
+        }
+        onSuccess(msg);
         onClose();
       }
     } catch (err) {
-      setError(err.message || 'QR Check-in failed.');
+      setError(err.message || `QR ${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} failed.`);
     } finally {
       setSubmitting(false);
     }
@@ -158,18 +165,25 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess }) {
     setError(null);
 
     try {
-      const response = await checkInWithQr({
+      const payload = {
         token: manualToken.trim(),
         latitude: manualLat ? Number(manualLat) : undefined,
         longitude: manualLon ? Number(manualLon) : undefined,
-      });
+      };
+
+      const apiFn = purpose === 'CHECK_OUT' ? checkOutWithQr : checkInWithQr;
+      const response = await apiFn(payload);
 
       if (response.success) {
-        onSuccess(response.message || 'Check-in recorded successfully via QR!');
+        let msg = response.message || `${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} recorded successfully via QR!`;
+        if (purpose === 'CHECK_OUT' && response.points_awarded > 0) {
+          msg += ` 🎉 Earned ${response.points_awarded} Reward Points!`;
+        }
+        onSuccess(msg);
         onClose();
       }
     } catch (err) {
-      setError(err.message || 'QR Check-in failed.');
+      setError(err.message || `QR ${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} failed.`);
     } finally {
       setSubmitting(false);
     }
@@ -188,7 +202,9 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
               </svg>
             </div>
-            <h3 className="font-bold text-slate-800 text-base">QR Code Attendance Scanner</h3>
+            <h3 className="font-bold text-slate-800 text-base">
+              QR Code {purpose === 'CHECK_OUT' ? 'Check-Out' : 'Check-In'} Scanner
+            </h3>
           </div>
 
           <button

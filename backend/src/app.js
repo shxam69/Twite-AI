@@ -8,6 +8,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const helpRoutes = require('./routes/helpRoutes');
 const leaveRoutes = require('./routes/leaveRoutes');
 const correctionRoutes = require('./routes/correctionRoutes');
+const rewardRoutes = require('./routes/rewardRoutes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
@@ -63,6 +64,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/help-requests', helpRoutes);
 app.use('/api/leave-requests', leaveRoutes);
+app.use('/api/rewards', rewardRoutes);
 
 // Static frontend serving & SPA fallback for single deployment
 const frontendDistPath = path.resolve(process.cwd(), 'frontend', 'dist');

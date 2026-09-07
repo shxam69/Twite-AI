@@ -18,7 +18,7 @@ async function seedAdmin() {
     if (adminCheck.length === 0) {
       const hashedAdminPass = await bcrypt.hash(adminPassword, 10);
       const [res] = await pool.query(
-        'INSERT INTO users (username, password, role) VALUES (?, ?, "admin")',
+        "INSERT INTO users (username, password, role) VALUES (?, ?, 'admin')",
         [adminUsername, hashedAdminPass]
       );
       console.log(`✅ Created Admin user "${adminUsername}" (User ID: ${res.insertId}).`);

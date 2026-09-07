@@ -47,14 +47,14 @@ async function main() {
     if (userRows.length > 0) {
       // Update existing user
       await pool.query(
-        'UPDATE users SET password = ?, role = "employee", employee_id = ? WHERE id = ?',
+        "UPDATE users SET password = ?, role = 'employee', employee_id = ? WHERE id = ?",
         [hashedPassword, employee.id, userRows[0].id]
       );
       console.log(`Updated user "${username}" (ID: ${userRows[0].id}): linked to Employee "${employee.name}" (${employee.employee_id}, PK: ${employee.id}).`);
     } else {
       // Create new employee user
       const [result] = await pool.query(
-        'INSERT INTO users (username, password, role, employee_id) VALUES (?, ?, "employee", ?)',
+        "INSERT INTO users (username, password, role, employee_id) VALUES (?, ?, 'employee', ?)",
         [username.trim(), hashedPassword, employee.id]
       );
       console.log(`Created employee user "${username}" (User ID: ${result.insertId}): linked to Employee "${employee.name}" (${employee.employee_id}, PK: ${employee.id}).`);
