@@ -1,39 +1,35 @@
 services:
-  # Express Backend API Service
+  # Single Full-Stack Web Service (Express Backend + React SPA Static Files)
   - type: web
-    name: attendance-system-backend
+    name: twite-ai-1
     env: node
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: npm install --prefix backend && npm install --prefix frontend --include=dev && npm run build --prefix frontend
+    startCommand: node backend/src/server.js
     healthCheckPath: /api/health
     envVars:
-      - key: PORT
-        value: 10000
       - key: NODE_ENV
         value: production
+
       - key: JWT_SECRET
         generateValue: true
+
       - key: JWT_EXPIRES_IN
         value: 1d
-      - key: DATABASE_URL
-        sync: false
-      - key: FRONTEND_URL
-        sync: false
-      - key: ALLOWED_ORIGINS
+
+      - key: DB_HOST
         sync: false
 
-  # React Vite Frontend Static Site
-  - type: web
-    name: attendance-system-frontend
-    env: static
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_BASE_URL
+      - key: DB_PORT
+        value: "28337"
+
+      - key: DB_USER
         sync: false
+
+      - key: DB_PASSWORD
+        sync: false
+
+      - key: DB_NAME
+        sync: false
+
+      - key: DB_SSL
+        value: "true"

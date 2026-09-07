@@ -1,5 +1,5 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
 // Ensure Node.js process uses Asia/Kolkata timezone
 process.env.TZ = process.env.TZ || 'Asia/Kolkata';
