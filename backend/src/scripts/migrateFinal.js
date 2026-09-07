@@ -471,6 +471,13 @@ async function migrate() {
     console.log('✅ [CREATED] Table "rewards" created successfully.');
   } else {
     console.log('ℹ️  [ALREADY PRESENT] Table "rewards" exists.');
+    if (!(await columnExists('rewards', 'stock_quantity'))) {
+      await pool.query(`
+        ALTER TABLE rewards
+        ADD COLUMN stock_quantity INT NOT NULL DEFAULT 100 AFTER points_cost
+      `);
+      console.log('  ✅ [CREATED] Added column "stock_quantity" to table "rewards".');
+    }
   }
 
   // Seed default rewards catalog items
@@ -483,8 +490,8 @@ async function migrate() {
 
   for (const [name, desc, cost] of defaultRewards) {
     await pool.query(
-      `INSERT INTO rewards (name, description, points_cost, status)
-       SELECT ?, ?, ?, 'active'
+      `INSERT INTO rewards (name, description, points_cost, stock_quantity, status)
+       SELECT ?, ?, ?, 100, 'active'
        WHERE NOT EXISTS (SELECT id FROM rewards WHERE name = ?)`,
       [name, desc, cost, name]
     );
@@ -520,6 +527,33 @@ async function migrate() {
     console.log('ℹ️  [ALREADY PRESENT] Table "reward_redemptions" exists.');
   }
 
+  // Step 17: webauthn_credentials table (Zero Biometrics Stored)
+  if (!(await tableExists('webauthn_credentials'))) {
+    await pool.query(`
+      CREATE TABLE webauthn_credentials (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        employee_id INT NOT NULL,
+        credential_id VARCHAR(500) NOT NULL UNIQUE,
+        public_key TEXT NOT NULL,
+        counter BIGINT NOT NULL DEFAULT 0,
+        device_type VARCHAR(50) NULL,
+        backed_up BOOLEAN DEFAULT FALSE,
+        transports VARCHAR(255) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_used_at TIMESTAMP NULL DEFAULT NULL,
+        INDEX idx_webauthn_employee (employee_id),
+        INDEX idx_webauthn_credential_id (credential_id),
+        CONSTRAINT fk_webauthn_employee
+          FOREIGN KEY (employee_id) REFERENCES employees(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ [CREATED] Table "webauthn_credentials" created successfully.');
+  } else {
+    console.log('ℹ️  [ALREADY PRESENT] Table "webauthn_credentials" exists.');
+  }
+
   // Verification step: Verify all required tables exist
   const requiredTables = [
     'employees',
@@ -537,6 +571,7 @@ async function migrate() {
     'employee_reward_transactions',
     'rewards',
     'reward_redemptions',
+    'webauthn_credentials',
   ];
 
   console.log('\n--------------------------------------------------');
@@ -553,6 +588,16 @@ async function migrate() {
       allExist = false;
     }
   }
+
+  // Query actual total count of tables from INFORMATION_SCHEMA dynamically
+  const [actualTables] = await pool.query(
+    `SELECT TABLE_NAME 
+     FROM INFORMATION_SCHEMA.TABLES 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     ORDER BY TABLE_NAME`
+  );
+  console.log(`\n📊 Total Database Tables in Schema: ${actualTables.length}`);
+  console.log(`📋 Tables: ${actualTables.map(t => t.TABLE_NAME).join(', ')}`);
 
   if (allExist) {
     console.log('\n==================================================');

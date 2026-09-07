@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { checkInWithQr, checkOutWithQr } from '../services/api';
+import {
+  checkInWithQr,
+  checkOutWithQr,
+  getWebAuthnAuthOptions,
+  verifyWebAuthnAuthentication,
+  logWebAuthnStatus,
+} from '../services/api';
+import {
+  isPlatformAuthenticatorAvailable,
+  getPlatformAssertion,
+} from '../services/webauthnClient';
 
 export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = 'CHECK_IN' }) {
   const [submitting, setSubmitting] = useState(false);
@@ -11,9 +21,25 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = '
   const [manualLon, setManualLon] = useState('');
   const [gpsStatus, setGpsStatus] = useState('Acquiring GPS...');
   const [currentCoords, setCurrentCoords] = useState(null);
+  const [authenticatorStatus, setAuthenticatorStatus] = useState('Checking device authenticator...');
+  const [hasAuthenticator, setHasAuthenticator] = useState(false);
 
   const html5QrcodeRef = useRef(null);
   const isScanningRef = useRef(false);
+
+  // Check WebAuthn platform authenticator availability
+  useEffect(() => {
+    async function checkAuth() {
+      const available = await isPlatformAuthenticatorAvailable();
+      setHasAuthenticator(available);
+      if (available) {
+        setAuthenticatorStatus('Platform Authenticator Available (Biometric / Passkey / PIN)');
+      } else {
+        setAuthenticatorStatus('No suitable platform authenticator available (WebAuthn will be skipped)');
+      }
+    }
+    checkAuth();
+  }, []);
 
   // Acquire current GPS location
   const acquireLocation = () => {
@@ -103,6 +129,79 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = '
     }
   };
 
+  /**
+   * Complete attendance with QR + GPS + optional WebAuthn
+   */
+  const processAttendanceSubmission = async (token, latitude, longitude) => {
+    // 1. Determine WebAuthn layer:
+    let verificationMethod = 'QR';
+
+    if (hasAuthenticator) {
+      try {
+        // Request authentication options from backend
+        const optRes = await getWebAuthnAuthOptions();
+        if (optRes.success && optRes.data) {
+          const { sessionKey, ...authOptions } = optRes.data;
+          
+          // Trigger browser platform authenticator
+          const assertionResponse = await getPlatformAssertion(authOptions);
+
+          // Verify with backend
+          const verifyRes = await verifyWebAuthnAuthentication({
+            sessionKey,
+            assertionResponse,
+          });
+
+          if (verifyRes.success) {
+            verificationMethod = 'QR_WEBAUTHN';
+          }
+        }
+      } catch (authErr) {
+        if (authErr.message === 'WEBAUTHN_CANCELLED') {
+          await logWebAuthnStatus({ status: 'WEBAUTHN_CANCELLED', reason: 'User cancelled biometric prompt' });
+          throw new Error('Biometric / Device authentication was cancelled. Attendance cannot be submitted without completing device verification when an authenticator is present.');
+        } else if (authErr.message === 'WEBAUTHN_FAILED') {
+          await logWebAuthnStatus({ status: 'WEBAUTHN_FAILED', reason: 'Biometric verification failed' });
+          throw new Error('Biometric / Device verification failed. Please try again.');
+        } else if (authErr.message === 'WEBAUTHN_UNAVAILABLE') {
+          // Device reported unavailable
+          verificationMethod = 'QR';
+          await logWebAuthnStatus({ status: 'WEBAUTHN_UNAVAILABLE', reason: 'No suitable platform authenticator found' });
+        } else {
+          // Re-throw specific errors
+          throw authErr;
+        }
+      }
+    } else {
+      // No platform authenticator available -> skip WebAuthn
+      verificationMethod = 'QR';
+      await logWebAuthnStatus({ status: 'WEBAUTHN_UNAVAILABLE', reason: 'Platform authenticator unsupported on device' }).catch(() => {});
+    }
+
+    // 2. Submit attendance with authoritative token, GPS coordinates, and verification method
+    const payload = {
+      token,
+      latitude,
+      longitude,
+      verification_method: verificationMethod,
+    };
+
+    const apiFn = purpose === 'CHECK_OUT' ? checkOutWithQr : checkInWithQr;
+    const response = await apiFn(payload);
+
+    if (response.success) {
+      let msg = response.message || `${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} recorded successfully via QR!`;
+      if (verificationMethod === 'QR_WEBAUTHN') {
+        msg += ' 🔐 (Verified with Device Passkey)';
+      }
+      if (purpose === 'CHECK_OUT' && response.points_awarded > 0) {
+        msg += ` 🎉 Earned ${response.points_awarded} Reward Points!`;
+      }
+      onSuccess(msg);
+      onClose();
+    }
+  };
+
   const handleScannedToken = async (rawToken) => {
     if (submitting) return;
 
@@ -115,7 +214,6 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = '
       let lon = currentCoords?.longitude;
 
       if (lat === undefined || lon === undefined) {
-        // Try one fast position lookup if not yet acquired
         await new Promise((resolve) => {
           if (!navigator.geolocation) return resolve();
           navigator.geolocation.getCurrentPosition(
@@ -130,23 +228,7 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = '
         });
       }
 
-      const payload = {
-        token: rawToken,
-        latitude: lat,
-        longitude: lon,
-      };
-
-      const apiFn = purpose === 'CHECK_OUT' ? checkOutWithQr : checkInWithQr;
-      const response = await apiFn(payload);
-
-      if (response.success) {
-        let msg = response.message || `${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} recorded successfully via QR!`;
-        if (purpose === 'CHECK_OUT' && response.points_awarded > 0) {
-          msg += ` 🎉 Earned ${response.points_awarded} Reward Points!`;
-        }
-        onSuccess(msg);
-        onClose();
-      }
+      await processAttendanceSubmission(rawToken, lat, lon);
     } catch (err) {
       setError(err.message || `QR ${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} failed.`);
     } finally {
@@ -165,23 +247,10 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = '
     setError(null);
 
     try {
-      const payload = {
-        token: manualToken.trim(),
-        latitude: manualLat ? Number(manualLat) : undefined,
-        longitude: manualLon ? Number(manualLon) : undefined,
-      };
+      const lat = manualLat ? Number(manualLat) : currentCoords?.latitude;
+      const lon = manualLon ? Number(manualLon) : currentCoords?.longitude;
 
-      const apiFn = purpose === 'CHECK_OUT' ? checkOutWithQr : checkInWithQr;
-      const response = await apiFn(payload);
-
-      if (response.success) {
-        let msg = response.message || `${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} recorded successfully via QR!`;
-        if (purpose === 'CHECK_OUT' && response.points_awarded > 0) {
-          msg += ` 🎉 Earned ${response.points_awarded} Reward Points!`;
-        }
-        onSuccess(msg);
-        onClose();
-      }
+      await processAttendanceSubmission(manualToken.trim(), lat, lon);
     } catch (err) {
       setError(err.message || `QR ${purpose === 'CHECK_OUT' ? 'Check-out' : 'Check-in'} failed.`);
     } finally {
@@ -190,6 +259,7 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = '
   };
 
   if (!isOpen) return null;
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -249,9 +319,20 @@ export default function QrScannerModal({ isOpen, onClose, onSuccess, purpose = '
               <span className={`w-2 h-2 rounded-full ${currentCoords ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
               <span>{gpsStatus}</span>
             </span>
-            <button onClick={acquireLocation} className="text-blue-600 font-semibold hover:underline">
+            <button onClick={acquireLocation} className="text-blue-600 font-semibold hover:underline cursor-pointer">
               Retry GPS
             </button>
+          </div>
+
+          {/* WebAuthn Platform Authenticator Indicator */}
+          <div className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-slate-600">
+            <span className="flex items-center space-x-1.5">
+              <span className={`w-2 h-2 rounded-full ${hasAuthenticator ? 'bg-indigo-500' : 'bg-slate-400'}`}></span>
+              <span>{authenticatorStatus}</span>
+            </span>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+              {hasAuthenticator ? 'BIOMETRIC / PASSKEY' : 'BYPASS ACTIVE'}
+            </span>
           </div>
 
           {/* Error Banner */}

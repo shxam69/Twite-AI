@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import QrScannerModal from '../components/QrScannerModal';
 import HelpRequestModal from '../components/HelpRequestModal';
+import AdminManualAttendanceModal from '../components/AdminManualAttendanceModal';
 import {
   checkIn,
   checkOut,
@@ -11,7 +12,15 @@ import {
   getMyRewardAccount,
   getRewardsCatalog,
   redeemRewardItem,
+  getPointsHistory,
+  getWebAuthnRegisterOptions,
+  verifyWebAuthnRegistration,
 } from '../services/api';
+import {
+  isPlatformAuthenticatorAvailable,
+  createPlatformCredential,
+} from '../services/webauthnClient';
+
 
 // --- Helper Functions ---
 
@@ -82,6 +91,49 @@ function StatusBadge({ status }) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
           Not Checked In
+        </span>
+      );
+  }
+}
+
+// --- Verification Badge ---
+
+function VerificationBadge({ method }) {
+  const norm = method ? method.toUpperCase() : 'MANUAL';
+  switch (norm) {
+    case 'ADMIN':
+      return (
+        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
+          <span>🛡️</span>
+          <span>ADMIN</span>
+        </span>
+      );
+    case 'QR_WEBAUTHN':
+      return (
+        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <span>🔐</span>
+          <span>QR + Passkey</span>
+        </span>
+      );
+    case 'QR':
+      return (
+        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+          <span>📷</span>
+          <span>QR</span>
+        </span>
+      );
+    case 'AUTO_LOCATION':
+      return (
+        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-200">
+          <span>📍</span>
+          <span>Geofence</span>
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          <span>📝</span>
+          <span>{norm}</span>
         </span>
       );
   }
@@ -286,11 +338,22 @@ export default function AttendancePage() {
   const [qrPurpose, setQrPurpose] = useState('CHECK_IN');
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [rewardModalOpen, setRewardModalOpen] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
 
   // Rewards State
   const [rewardAccount, setRewardAccount] = useState(null);
   const [rewardsCatalog, setRewardsCatalog] = useState([]);
   const [redeemLoadingId, setRedeemLoadingId] = useState(null);
+  const [pointsHistory, setPointsHistory] = useState(null);
+  const [historyDays, setHistoryDays] = useState(7);
+  const [hasAuthenticator, setHasAuthenticator] = useState(false);
+  const [enrollLoading, setEnrollLoading] = useState(false);
+
+  // Check platform authenticator
+  useEffect(() => {
+    isPlatformAuthenticatorAvailable().then(setHasAuthenticator);
+  }, []);
 
   // Action states
   const [actionLoading, setActionLoading] = useState(false);
@@ -317,6 +380,48 @@ export default function AttendancePage() {
       console.error('Error fetching reward account:', err);
     }
   }, [isEmployee]);
+
+  const fetchPointsHistory = useCallback(async (days = historyDays) => {
+    if (!isEmployee) return;
+    try {
+      const res = await getPointsHistory({ days });
+      if (res.success) {
+        setPointsHistory(res.data);
+      }
+    } catch (err) {
+      console.error('Error fetching points history:', err);
+    }
+  }, [isEmployee, historyDays]);
+
+  const handleEnrollDevice = async () => {
+    setEnrollLoading(true);
+    try {
+      const optRes = await getWebAuthnRegisterOptions();
+      if (!optRes.success || !optRes.data) {
+        throw new Error('Failed to obtain registration options.');
+      }
+
+      const { sessionKey, ...creationOptions } = optRes.data;
+      const credentialResponse = await createPlatformCredential(creationOptions);
+
+      const verifyRes = await verifyWebAuthnRegistration({
+        sessionKey,
+        credentialResponse,
+      });
+
+      if (verifyRes.success) {
+        showFeedback('success', 'Device platform passkey enrolled successfully! Biometric/PIN verification will now be used during QR check-in.');
+      }
+    } catch (err) {
+      if (err.message === 'WEBAUTHN_CANCELLED') {
+        showFeedback('error', 'Device passkey enrollment was cancelled.');
+      } else {
+        showFeedback('error', err.message || 'Passkey enrollment failed.');
+      }
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
 
   const openRewardsCatalog = async () => {
     setRewardModalOpen(true);
@@ -395,8 +500,10 @@ export default function AttendancePage() {
     fetchHistory(1, filters);
     if (isEmployee) {
       fetchRewardAccount();
+      fetchPointsHistory(historyDays);
     }
-  }, [fetchTodayRecord, fetchSummary, fetchHistory, fetchRewardAccount, filters, isEmployee]);
+  }, [fetchTodayRecord, fetchSummary, fetchHistory, fetchRewardAccount, fetchPointsHistory, filters, isEmployee, historyDays]);
+
 
   // Handle Check In
   const handleCheckInAction = async () => {
@@ -505,6 +612,23 @@ export default function AttendancePage() {
         </>
       )}
 
+      {/* Admin Manual Attendance Override Modal */}
+      {isAdmin && (
+        <AdminManualAttendanceModal
+          isOpen={adminModalOpen}
+          onClose={() => {
+            setAdminModalOpen(false);
+            setEditingRecord(null);
+          }}
+          onSuccess={(msg) => {
+            showFeedback('success', msg);
+            fetchHistory(pagination.page, filters);
+            fetchSummary();
+          }}
+          recordToEdit={editingRecord}
+        />
+      )}
+
       {/* Header & Live Clock */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
         <div>
@@ -513,7 +637,21 @@ export default function AttendancePage() {
           </h1>
           <p className="text-sm text-slate-500 mt-1">{dateFormatted}</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Admin Mark Attendance Override Button */}
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setEditingRecord(null);
+                setAdminModalOpen(true);
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
+            >
+              <span>🛡️</span>
+              <span>Mark Attendance</span>
+            </button>
+          )}
+
           <div className="text-right">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Live Clock</span>
             <span className="text-xl font-mono font-bold text-blue-600">{timeFormatted}</span>
@@ -672,44 +810,173 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* Extra Hours Reward Wallet Banner for Employee */}
+      {/* Employee Rewards, Points Wallet & Device Passkey Hub */}
       {isEmployee && (
-        <div className="bg-gradient-to-br from-amber-50 via-amber-100/40 to-orange-50 border border-amber-200/80 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl font-bold shadow-sm shrink-0">
-              🪙
+        <div className="space-y-4">
+          {/* Main Wallet Banner */}
+          <div className="bg-gradient-to-br from-amber-50 via-amber-100/40 to-orange-50 border border-amber-200/80 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl font-bold shadow-sm shrink-0">
+                🪙
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-bold text-slate-800 text-base">Extra Hours Reward Wallet</h3>
+                  <span className="bg-amber-200/80 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">
+                    Active
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Earn points automatically for every verified extra hour worked beyond standard shift duration.
+                </p>
+              </div>
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="font-bold text-slate-800 text-base">Extra Hours Reward Wallet</h3>
-                <span className="bg-amber-200/80 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">
-                  Active
+
+            <div className="flex flex-wrap items-center gap-4 shrink-0">
+              <div className="text-right border-r border-amber-200 pr-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">Available Balance</span>
+                <span className="text-2xl font-extrabold text-amber-600 font-mono">
+                  {rewardAccount?.points_balance ?? 0} <span className="text-xs font-semibold text-amber-700">pts</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-600 mt-0.5">
-                Earn points for working beyond standard shift hours. Redeem points for catalog rewards!
-              </p>
+              <div className="text-right border-r border-amber-200 pr-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Total Earned</span>
+                <span className="text-base font-bold text-slate-700 font-mono">
+                  {rewardAccount?.total_earned ?? 0} pts
+                </span>
+              </div>
+
+              <button
+                onClick={openRewardsCatalog}
+                className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5"
+              >
+                <span>🎁</span>
+                <span>Redeem Rewards</span>
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="text-right border-r border-amber-200 pr-4">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">Available Balance</span>
-              <span className="text-2xl font-extrabold text-amber-600 font-mono">
-                {rewardAccount?.points_balance ?? 0} <span className="text-xs font-semibold text-amber-700">pts</span>
-              </span>
+          {/* Grid: Weekly Points Chart (Real DB Data) + Device Authenticator Status */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Real Data Points Chart (7 / 30 / 90 Days) */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-100 gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 flex items-center space-x-2">
+                    <span>Points History Chart</span>
+                    <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">Real DB Data</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    Points earned per individual calendar day (including zero-point days)
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
+                  {[7, 30, 90].map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => {
+                        setHistoryDays(d);
+                        fetchPointsHistory(d);
+                      }}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                        historyDays === d
+                          ? 'bg-white text-blue-600 shadow-2xs'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {d} Days
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Total for period */}
+              <div className="flex items-center justify-between bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-100 text-xs">
+                <span className="text-slate-600 font-medium">Points earned in selected {historyDays}-day window:</span>
+                <span className="font-mono font-bold text-blue-600 text-sm">
+                  {pointsHistory?.total_period_earned ?? 0} pts
+                </span>
+              </div>
+
+              {/* Chart Bars */}
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {!pointsHistory?.history || pointsHistory.history.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-6 text-center">No points earned in this period.</p>
+                ) : (
+                  pointsHistory.history.map((item) => {
+                    const maxPts = Math.max(...pointsHistory.history.map((h) => h.points), 100);
+                    const pct = Math.min(100, Math.round((item.points / maxPts) * 100));
+                    return (
+                      <div key={item.date} className="flex items-center space-x-3 text-xs">
+                        <span className="w-24 text-slate-600 font-medium shrink-0 truncate">
+                          {item.day_name.slice(0, 3)} <span className="text-[10px] text-slate-400">{item.date.slice(5)}</span>
+                        </span>
+                        <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              item.points > 0 ? 'bg-amber-500' : 'bg-transparent'
+                            }`}
+                            style={{ width: `${item.points > 0 ? Math.max(pct, 5) : 0}%` }}
+                          ></div>
+                        </div>
+                        <span className="w-16 text-right font-mono font-bold text-slate-700 shrink-0">
+                          {item.points} pts
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
-            <button
-              onClick={openRewardsCatalog}
-              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5"
-            >
-              <span>🎁</span>
-              <span>Redeem Rewards</span>
-            </button>
+            {/* Device Authenticator (WebAuthn) Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h4 className="text-sm font-bold text-slate-800">🔐 Device Passkey</h4>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    hasAuthenticator ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {hasAuthenticator ? 'Supported' : 'Unavailable'}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                  WebAuthn enables biometric login (Touch ID, Windows Hello, Face ID, Android Biometrics, or device PIN). No raw biometric data is ever stored on servers.
+                </p>
+
+                <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">Platform Sensor:</span>
+                    <span className="font-bold text-slate-800">
+                      {hasAuthenticator ? '✅ Available' : '❌ Not Detected'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">Attendance Rule:</span>
+                    <span className="text-[10px] font-mono text-blue-600">
+                      {hasAuthenticator ? 'Passkey + QR + GPS' : 'QR + GPS (Bypass)'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {hasAuthenticator && (
+                <button
+                  onClick={handleEnrollDevice}
+                  disabled={enrollLoading}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                >
+                  <span>🔑</span>
+                  <span>{enrollLoading ? 'Enrolling...' : 'Enroll This Device Passkey'}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
+
 
       {/* Rewards Catalog Redemption Modal */}
       {rewardModalOpen && (
@@ -926,7 +1193,9 @@ export default function AttendancePage() {
                     <th className="py-3 px-4">Check Out</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Duration</th>
+                    <th className="py-3 px-4">Verification</th>
                     <th className="py-3 px-4">Remarks</th>
+                    {isAdmin && <th className="py-3 px-4 text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -940,6 +1209,8 @@ export default function AttendancePage() {
                         <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
                         <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16" /></td>
                         <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
+                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
+                        {isAdmin && <td className="py-3 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-14 ml-auto" /></td>}
                       </tr>
                     ))
                   ) : records.length > 0 ? (
@@ -959,14 +1230,31 @@ export default function AttendancePage() {
                         <td className="py-3 px-4 font-mono text-xs text-slate-600">
                           {formatWorkingDuration(rec.check_in, rec.check_out)}
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-500 italic max-w-xs truncate">
+                        <td className="py-3 px-4">
+                          <VerificationBadge method={rec.verification_method} />
+                        </td>
+                        <td className="py-3 px-4 text-xs text-slate-500 italic max-w-xs truncate" title={rec.remarks || ''}>
                           {rec.remarks || '—'}
                         </td>
+                        {isAdmin && (
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => {
+                                setEditingRecord(rec);
+                                setAdminModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors cursor-pointer"
+                              title="Modify Attendance via Admin Override"
+                            >
+                              ✏️ Override
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={isAdmin ? 7 : 6} className="py-8 text-center text-slate-400 text-sm">
+                      <td colSpan={isAdmin ? 9 : 7} className="py-8 text-center text-slate-400 text-sm">
                         No attendance records found.
                       </td>
                     </tr>

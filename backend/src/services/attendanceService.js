@@ -87,11 +87,33 @@ async function findEmployeeByIdOrCode(identifier) {
   return rows.length > 0 ? rows[0] : null;
 }
 
+function parseTimeToSeconds(timeStr) {
+  if (!timeStr) return 0;
+  const parts = timeStr.toString().trim().split(':').map(Number);
+  return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+}
+
 /**
  * Manually mark/create an attendance record (Admin)
  */
-async function markAttendance(data) {
-  const { employee_id, attendance_date, check_in, check_out, status = 'present', verification_method = 'ADMIN' } = data;
+async function markAttendance(data, adminUser = {}) {
+  const {
+    employee_id,
+    attendance_date,
+    check_in,
+    check_out,
+    status = 'present',
+    verification_method = 'ADMIN',
+    remarks,
+    reason,
+  } = data;
+
+  const adminRemark = (remarks || reason || '').trim();
+  if (!adminRemark) {
+    const error = new Error('An administrative reason/remark is required for manual attendance override.');
+    error.status = 400;
+    throw error;
+  }
 
   // 1. Verify employee exists
   const employee = await findEmployee(employee_id);
@@ -102,9 +124,29 @@ async function markAttendance(data) {
       employee_id,
       event_type: 'ADMIN_ATTENDANCE_UPDATE',
       verification_method: 'ADMIN',
-      metadata: { error: 'Employee not found' },
+      metadata: {
+        action: 'CREATE_FAILED',
+        error: 'Employee not found',
+        admin_user_id: adminUser?.id || null,
+        admin_username: adminUser?.username || 'admin',
+        attendance_date,
+        reason: adminRemark,
+        timestamp: new Date().toISOString(),
+        result: 'FAILED',
+      },
     });
     throw error;
+  }
+
+  // Time ordering validation if both check_in and check_out provided
+  if (check_in && check_out) {
+    const inSec = parseTimeToSeconds(check_in);
+    const outSec = parseTimeToSeconds(check_out);
+    if (outSec <= inSec) {
+      const error = new Error('Check-out time must be after check-in time.');
+      error.status = 400;
+      throw error;
+    }
   }
 
   // 2. Check for duplicate attendance on the same date
@@ -120,19 +162,28 @@ async function markAttendance(data) {
       employee_id,
       event_type: 'ADMIN_ATTENDANCE_UPDATE',
       verification_method: 'ADMIN',
-      metadata: { error: 'Duplicate attendance record' },
+      metadata: {
+        action: 'CREATE_FAILED',
+        error: 'Duplicate attendance record',
+        admin_user_id: adminUser?.id || null,
+        admin_username: adminUser?.username || 'admin',
+        employee_id: employee.id,
+        employee_name: employee.name,
+        attendance_date,
+        reason: adminRemark,
+        timestamp: new Date().toISOString(),
+        result: 'FAILED',
+      },
     });
     throw error;
   }
 
-  const normMethod = ['MANUAL', 'QR', 'WEBAUTHN', 'QR_WEBAUTHN', 'AUTO_LOCATION', 'ADMIN'].includes(verification_method)
-    ? verification_method
-    : 'ADMIN';
+  const normMethod = 'ADMIN';
 
   // 3. Insert record
   const [result] = await pool.query(
-    `INSERT INTO attendance (employee_id, attendance_date, check_in, check_out, status, verification_method)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO attendance (employee_id, attendance_date, check_in, check_out, status, verification_method, remarks)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       employee_id,
       attendance_date,
@@ -140,17 +191,159 @@ async function markAttendance(data) {
       check_out || null,
       status,
       normMethod,
+      adminRemark,
     ]
   );
 
+  const newRecordId = result.insertId;
+
+  // 4. Reward points calculation if completed shift qualifies
+  let rewardResult = null;
+  if (check_in && check_out) {
+    const workedSeconds = parseTimeToSeconds(check_out) - parseTimeToSeconds(check_in);
+    if (workedSeconds > 0) {
+      rewardResult = await rewardService.awardExtraHoursPoints(employee_id, newRecordId, workedSeconds);
+    }
+  }
+
+  // 5. Mandatory Audit Event: ADMIN_ATTENDANCE_UPDATE
   await eventService.logAttendanceEvent({
     employee_id,
     event_type: 'ADMIN_ATTENDANCE_UPDATE',
-    verification_method: normMethod,
-    metadata: { attendance_date, status, check_in, check_out },
+    verification_method: 'ADMIN',
+    metadata: {
+      action: 'CREATE',
+      attendance_id: newRecordId,
+      admin_user_id: adminUser?.id || null,
+      admin_username: adminUser?.username || 'admin',
+      employee_id: employee.id,
+      employee_name: employee.name,
+      attendance_date,
+      previous_values: null,
+      new_values: {
+        check_in: check_in || null,
+        check_out: check_out || null,
+        status,
+        verification_method: 'ADMIN',
+        remarks: adminRemark,
+      },
+      reason: adminRemark,
+      reward_points_awarded: rewardResult?.pointsAwarded || 0,
+      timestamp: new Date().toISOString(),
+      result: 'SUCCESS',
+    },
   });
 
-  return getAttendanceById(result.insertId);
+  return getAttendanceById(newRecordId);
+}
+
+/**
+ * Manually update an existing attendance record (Admin)
+ */
+async function updateAttendance(id, data, adminUser = {}) {
+  const {
+    check_in,
+    check_out,
+    status,
+    remarks,
+    reason,
+  } = data;
+
+  const adminRemark = (remarks || reason || '').trim();
+  if (!adminRemark) {
+    const error = new Error('An administrative reason/remark is required for manual attendance override.');
+    error.status = 400;
+    throw error;
+  }
+
+  // 1. Fetch existing attendance record
+  const existingRecord = await getAttendanceById(id);
+  if (!existingRecord) {
+    const error = new Error('Attendance record not found.');
+    error.status = 404;
+    throw error;
+  }
+
+  const employee = await findEmployee(existingRecord.employee_id);
+
+  // Target values
+  const targetCheckIn = check_in !== undefined ? check_in : existingRecord.check_in;
+  const targetCheckOut = check_out !== undefined ? check_out : existingRecord.check_out;
+  const targetStatus = status ? status.trim().toLowerCase() : existingRecord.status;
+
+  // Time ordering validation if both targetCheckIn and targetCheckOut present
+  if (targetCheckIn && targetCheckOut) {
+    const inSec = parseTimeToSeconds(targetCheckIn);
+    const outSec = parseTimeToSeconds(targetCheckOut);
+    if (outSec <= inSec) {
+      const error = new Error('Check-out time must be after check-in time.');
+      error.status = 400;
+      throw error;
+    }
+  }
+
+  const previousValues = {
+    check_in: existingRecord.check_in,
+    check_out: existingRecord.check_out,
+    status: existingRecord.status,
+    verification_method: existingRecord.verification_method,
+    remarks: existingRecord.remarks,
+  };
+
+  const newValues = {
+    check_in: targetCheckIn || null,
+    check_out: targetCheckOut || null,
+    status: targetStatus,
+    verification_method: 'ADMIN',
+    remarks: adminRemark,
+  };
+
+  // 2. Update record in database
+  await pool.query(
+    `UPDATE attendance 
+     SET check_in = ?, check_out = ?, status = ?, verification_method = 'ADMIN', remarks = ?
+     WHERE id = ?`,
+    [
+      newValues.check_in,
+      newValues.check_out,
+      newValues.status,
+      newValues.remarks,
+      id,
+    ]
+  );
+
+  // 3. Reward points calculation if completed shift qualifies (idempotent ledger check)
+  let rewardResult = null;
+  if (newValues.check_in && newValues.check_out) {
+    const workedSeconds = parseTimeToSeconds(newValues.check_out) - parseTimeToSeconds(newValues.check_in);
+    if (workedSeconds > 0) {
+      rewardResult = await rewardService.awardExtraHoursPoints(existingRecord.employee_id, id, workedSeconds);
+    }
+  }
+
+  // 4. Mandatory Audit Event: ADMIN_ATTENDANCE_UPDATE
+  await eventService.logAttendanceEvent({
+    employee_id: existingRecord.employee_id,
+    event_type: 'ADMIN_ATTENDANCE_UPDATE',
+    verification_method: 'ADMIN',
+    metadata: {
+      action: 'UPDATE',
+      attendance_id: id,
+      admin_user_id: adminUser?.id || null,
+      admin_username: adminUser?.username || 'admin',
+      employee_id: existingRecord.employee_id,
+      employee_name: employee?.name || existingRecord.employee_name,
+      attendance_date: existingRecord.attendance_date,
+      previous_values: previousValues,
+      new_values: newValues,
+      reason: adminRemark,
+      reward_points_awarded: rewardResult?.pointsAwarded || 0,
+      timestamp: new Date().toISOString(),
+      result: 'SUCCESS',
+    },
+  });
+
+  return getAttendanceById(id);
 }
 
 /**
@@ -555,7 +748,7 @@ async function getAttendanceSummary(query) {
 /**
  * Dynamic Rotating QR Check-in with GPS Geofencing (Employee)
  */
-async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
+async function checkInWithQr(employeeId, rawToken, latitude, longitude, verificationMethod = 'QR') {
   // 1. Verify employee exists
   const employee = await findEmployee(employeeId);
   if (!employee) {
@@ -564,7 +757,7 @@ async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
     await eventService.logAttendanceEvent({
       employee_id: employeeId,
       event_type: 'CHECK_IN_FAILED',
-      verification_method: 'QR',
+      verification_method: verificationMethod,
       metadata: { reason: 'Employee not found' },
     });
     throw error;
@@ -577,7 +770,7 @@ async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
     await eventService.logAttendanceEvent({
       employee_id: employeeId,
       event_type: 'CHECK_IN_FAILED',
-      verification_method: 'QR',
+      verification_method: verificationMethod,
       metadata: { reason: 'Employee is inactive' },
     });
     throw error;
@@ -618,11 +811,12 @@ async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
     const officeStartTime = (await policyService.getPolicy('office_start_time')) || OFFICE_START_TIME;
     const initialStatus = currentTime > officeStartTime ? 'late' : 'present';
 
-    // 8. Insert attendance record with verification_method = 'QR'
+    // 8. Insert attendance record with verification_method ('QR' or 'QR_WEBAUTHN')
+    const finalMethod = ['QR', 'QR_WEBAUTHN'].includes(verificationMethod) ? verificationMethod : 'QR';
     const [insertResult] = await connection.query(
       `INSERT INTO attendance (employee_id, attendance_date, check_in, status, verification_method)
        VALUES (?, ?, ?, ?, ?)`,
-      [employeeId, today, currentTime, initialStatus, 'QR']
+      [employeeId, today, currentTime, initialStatus, finalMethod]
     );
 
     // Commit transaction
@@ -632,7 +826,7 @@ async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
     await eventService.logAttendanceEvent({
       employee_id: employeeId,
       event_type: 'CHECK_IN',
-      verification_method: 'QR',
+      verification_method: finalMethod,
       metadata: {
         challenge_id: challengeId,
         distance_meters: distanceMeters,
@@ -665,9 +859,9 @@ async function checkInWithQr(employeeId, rawToken, latitude, longitude) {
 }
 
 /**
- * Dynamic Rotating QR Check-out with GPS Geofencing & Reward Points (Employee)
+ * Dynamic Rotating QR Check-out with GPS Geofencing (Employee)
  */
-async function checkOutWithQr(employeeId, rawToken, latitude, longitude) {
+async function checkOutWithQr(employeeId, rawToken, latitude, longitude, verificationMethod = 'QR') {
   // 1. Verify employee exists
   const employee = await findEmployee(employeeId);
   if (!employee) {
@@ -676,7 +870,7 @@ async function checkOutWithQr(employeeId, rawToken, latitude, longitude) {
     await eventService.logAttendanceEvent({
       employee_id: employeeId,
       event_type: 'CHECK_OUT_FAILED',
-      verification_method: 'QR',
+      verification_method: verificationMethod,
       metadata: { reason: 'Employee not found' },
     });
     throw error;
@@ -684,12 +878,12 @@ async function checkOutWithQr(employeeId, rawToken, latitude, longitude) {
 
   // 2. Inactive employees cannot check out
   if (employee.status === 'inactive') {
-    const error = new Error('Cannot check out inactive employee.');
+    const error = new Error('Cannot process check-out for inactive employee.');
     error.status = 400;
     await eventService.logAttendanceEvent({
       employee_id: employeeId,
       event_type: 'CHECK_OUT_FAILED',
-      verification_method: 'QR',
+      verification_method: verificationMethod,
       metadata: { reason: 'Employee is inactive' },
     });
     throw error;
@@ -706,61 +900,54 @@ async function checkOutWithQr(employeeId, rawToken, latitude, longitude) {
   let distanceMeters = null;
 
   try {
-    // 4. Find open attendance record for today (must be checked in, check_out IS NULL)
-    const [existing] = await connection.query(
-      `SELECT id, check_in, check_out, status 
-       FROM attendance 
-       WHERE employee_id = ? AND attendance_date = ? 
-       FOR UPDATE`,
+    // 4. Find today's attendance record
+    const [records] = await connection.query(
+      'SELECT id, check_in, check_out FROM attendance WHERE employee_id = ? AND attendance_date = ? FOR UPDATE',
       [employeeId, today]
     );
 
-    if (existing.length === 0) {
-      const error = new Error('No check-in record found for today. You must check in before checking out.');
+    if (records.length === 0) {
+      const error = new Error('No check-in record found for today. You must check in first before checking out.');
       error.status = 400;
       throw error;
     }
 
-    const attendance = existing[0];
+    const attendance = records[0];
 
+    // Already checked out check
     if (attendance.check_out) {
-      const error = new Error('Employee has already checked out for today.');
+      const error = new Error('Employee has already checked out today.');
       error.status = 400;
       throw error;
     }
 
-    if (!attendance.check_in) {
-      const error = new Error('No check-in time recorded for today.');
-      error.status = 400;
-      throw error;
-    }
+    // 5. Authoritative GPS geofence verification
+    const gpsResult = await gpsService.verifyWorkplaceGeofence(latitude, longitude);
+    distanceMeters = gpsResult.distanceMeters;
 
-    // 5. Check minimum checkout hours policy
+    // 6. Authoritative QR token validation and per-employee usage recording inside transaction
+    const qrResult = await qrService.validateAndConsumeChallengeForEmployee(rawToken, employeeId, 'CHECK_OUT', connection);
+    challengeId = qrResult.challenge_id;
+
+    // 7. Enforce minimum working hours policy before check-out
     const minHoursStr = await policyService.getPolicy('minimum_checkout_hours');
-    const minHours = parseFloat(minHoursStr) || 4;
+    const minHours = minHoursStr !== null && minHoursStr !== undefined ? parseFloat(minHoursStr) : 4;
     const workedSeconds = getWorkedDurationInSeconds(attendance.check_in, currentTime);
-    const workedHours = workedSeconds / 3600;
 
-    if (workedHours < minHours) {
+    if (minHours > 0 && workedSeconds < minHours * 3600) {
+      const workedHoursFormatted = (workedSeconds / 3600).toFixed(1);
       const error = new Error(
-        `Minimum working duration of ${minHours} hours not met. (Current: ${workedHours.toFixed(1)} hrs)`
+        `Minimum working duration of ${minHours} hours required before check-out. Current duration: ${workedHoursFormatted} hours.`
       );
       error.status = 400;
       throw error;
     }
 
-    // 6. Authoritative GPS geofence verification
-    const gpsResult = await gpsService.verifyWorkplaceGeofence(latitude, longitude);
-    distanceMeters = gpsResult.distanceMeters;
-
-    // 7. Authoritative QR token validation with expectedPurpose = 'CHECK_OUT'
-    const qrResult = await qrService.validateAndConsumeChallengeForEmployee(rawToken, employeeId, 'CHECK_OUT', connection);
-    challengeId = qrResult.challenge_id;
-
-    // 8. Update attendance record with check_out time
+    // 8. Update attendance record with check_out time & method
+    const finalMethod = ['QR', 'QR_WEBAUTHN'].includes(verificationMethod) ? verificationMethod : 'QR';
     await connection.query(
-      `UPDATE attendance SET check_out = ? WHERE id = ?`,
-      [currentTime, attendance.id]
+      `UPDATE attendance SET check_out = ?, verification_method = ? WHERE id = ?`,
+      [currentTime, finalMethod, attendance.id]
     );
 
     // 9. Transactional Extra Hours Reward Calculation & Ledger Insertion
@@ -778,7 +965,7 @@ async function checkOutWithQr(employeeId, rawToken, latitude, longitude) {
     await eventService.logAttendanceEvent({
       employee_id: employeeId,
       event_type: 'CHECK_OUT',
-      verification_method: 'QR',
+      verification_method: finalMethod,
       metadata: {
         challenge_id: challengeId,
         distance_meters: distanceMeters,
@@ -793,7 +980,7 @@ async function checkOutWithQr(employeeId, rawToken, latitude, longitude) {
     const record = await getAttendanceById(attendance.id);
     return {
       ...record,
-      worked_hours: parseFloat(workedHours.toFixed(2)),
+      worked_hours: (workedSeconds / 3600).toFixed(2),
       extra_hours: rewardResult.extraHours || 0,
       points_awarded: rewardResult.pointsAwarded || 0,
     };
@@ -823,6 +1010,7 @@ module.exports = {
   VALID_STATUSES,
   findEmployeeByIdOrCode,
   markAttendance,
+  updateAttendance,
   checkIn,
   checkOut,
   checkInWithQr,

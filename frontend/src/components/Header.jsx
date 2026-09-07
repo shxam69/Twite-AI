@@ -15,6 +15,8 @@ export default function Header({ onToggleSidebar }) {
     total_action_required: 0,
   });
   const [showDropdown, setShowDropdown] = useState(false);
+  const [toastNotification, setToastNotification] = useState(null);
+  const previousHelpCountRef = useRef(null);
   const dropdownRef = useRef(null);
 
   const isAdmin = user?.role === 'admin';
@@ -26,7 +28,24 @@ export default function Header({ onToggleSidebar }) {
       try {
         const res = await getAdminNotificationCounts();
         if (res.data) {
-          setCounts(res.data);
+          const newCounts = res.data;
+          
+          // Check if open_help_requests increased
+          if (
+            previousHelpCountRef.current !== null &&
+            newCounts.open_help_requests > previousHelpCountRef.current
+          ) {
+            const diff = newCounts.open_help_requests - previousHelpCountRef.current;
+            setToastNotification({
+              id: Date.now(),
+              title: 'New Help Request',
+              message: diff === 1 ? 'An employee requested technical assistance.' : `${diff} new employee help requests received.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            });
+          }
+
+          previousHelpCountRef.current = newCounts.open_help_requests;
+          setCounts(newCounts);
         }
       } catch (err) {
         // Silently handle header badge error
@@ -34,9 +53,19 @@ export default function Header({ onToggleSidebar }) {
     };
 
     fetchCounts();
-    const timer = setInterval(fetchCounts, 15000);
+    const timer = setInterval(fetchCounts, 12000);
     return () => clearInterval(timer);
   }, [isAdmin]);
+
+  // Auto-dismiss toast notification after 7 seconds
+  useEffect(() => {
+    if (toastNotification) {
+      const timer = setTimeout(() => {
+        setToastNotification(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastNotification]);
 
   // Handle click outside notification dropdown
   useEffect(() => {
@@ -59,6 +88,7 @@ export default function Header({ onToggleSidebar }) {
     if (path.includes('leaves')) return 'Leave Management';
     if (path.includes('corrections')) return 'Attendance Corrections';
     if (path.includes('audit-log')) return 'Audit Log';
+    if (path.includes('rewards')) return 'Rewards Management';
     if (path.includes('attendance/settings')) return 'Attendance Settings';
     if (path.includes('attendance')) return 'Attendance Tracking';
     return 'Attendance Management';
@@ -227,7 +257,49 @@ export default function Header({ onToggleSidebar }) {
           <span>Logout</span>
         </button>
       </div>
+
+      {/* Floating In-App Help Request Notification Toast */}
+      {toastNotification && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-amber-300 p-4 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-start space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 text-lg shadow-sm">
+              🆘
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  {toastNotification.title}
+                </h4>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {toastNotification.timestamp}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1 leading-snug">
+                {toastNotification.message}
+              </p>
+              <div className="mt-2.5 flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    setToastNotification(null);
+                    navigate('/admin/help-requests');
+                  }}
+                  className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                >
+                  View Request &rarr;
+                </button>
+                <button
+                  onClick={() => setToastNotification(null)}
+                  className="px-2.5 py-1 text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
+
 

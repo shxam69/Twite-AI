@@ -14,14 +14,20 @@ function isValidDateString(dateStr) {
   return d instanceof Date && !isNaN(d.getTime());
 }
 
+function parseTimeToSeconds(timeStr) {
+  if (!timeStr) return 0;
+  const parts = timeStr.toString().trim().split(':').map(Number);
+  return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+}
+
 /**
- * @desc    Manually create/mark an attendance record (Admin)
- * @route   POST /api/attendance
+ * @desc    Manually create/mark an attendance record (Admin Override)
+ * @route   POST /api/attendance/admin/mark & POST /api/attendance
  * @access  Private (Admin)
  */
 async function markAttendance(req, res, next) {
   try {
-    const { employee_id, attendance_date, check_in, check_out, status } = req.body;
+    const { employee_id, attendance_date, check_in, check_out, status, remarks, reason } = req.body;
 
     // Validate employee_id
     if (!employee_id || isNaN(parseInt(employee_id, 10))) {
@@ -39,19 +45,46 @@ async function markAttendance(req, res, next) {
       });
     }
 
+    // Validate mandatory admin remark/reason
+    const adminRemark = (remarks || reason || '').trim();
+    if (!adminRemark) {
+      return res.status(400).json({
+        success: false,
+        message: 'An administrative reason/remark is required for manual attendance override.',
+      });
+    }
+
     // Validate time formats if provided
-    if (check_in && !TIME_REGEX.test(check_in.trim())) {
+    let normCheckIn = check_in ? check_in.trim() : null;
+    let normCheckOut = check_out ? check_out.trim() : null;
+
+    if (normCheckIn && normCheckIn.length === 5) normCheckIn = `${normCheckIn}:00`;
+    if (normCheckOut && normCheckOut.length === 5) normCheckOut = `${normCheckOut}:00`;
+
+    if (normCheckIn && !TIME_REGEX.test(normCheckIn)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid check_in time format. Expected HH:MM:SS.',
       });
     }
 
-    if (check_out && !TIME_REGEX.test(check_out.trim())) {
+    if (normCheckOut && !TIME_REGEX.test(normCheckOut)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid check_out time format. Expected HH:MM:SS.',
       });
+    }
+
+    // Validate time ordering
+    if (normCheckIn && normCheckOut) {
+      const inSec = parseTimeToSeconds(normCheckIn);
+      const outSec = parseTimeToSeconds(normCheckOut);
+      if (outSec <= inSec) {
+        return res.status(400).json({
+          success: false,
+          message: 'Check-out time must be after check-in time.',
+        });
+      }
     }
 
     // Validate status if provided
@@ -63,17 +96,22 @@ async function markAttendance(req, res, next) {
       });
     }
 
-    const record = await attendanceService.markAttendance({
-      employee_id: parseInt(employee_id, 10),
-      attendance_date: attendance_date.trim(),
-      check_in: check_in ? check_in.trim() : null,
-      check_out: check_out ? check_out.trim() : null,
-      status: targetStatus,
-    });
+    const record = await attendanceService.markAttendance(
+      {
+        employee_id: parseInt(employee_id, 10),
+        attendance_date: attendance_date.trim(),
+        check_in: normCheckIn,
+        check_out: normCheckOut,
+        status: targetStatus,
+        remarks: adminRemark,
+        verification_method: 'ADMIN',
+      },
+      req.user
+    );
 
     return res.status(201).json({
       success: true,
-      message: 'Attendance marked successfully.',
+      message: 'Attendance marked successfully via Admin override.',
       data: record,
     });
   } catch (error) {
@@ -88,6 +126,91 @@ async function markAttendance(req, res, next) {
         success: false,
         message: 'Attendance record already exists for this employee on this date.',
       });
+    }
+    next(error);
+  }
+}
+
+/**
+ * @desc    Manually update an existing attendance record (Admin Override)
+ * @route   PUT /api/attendance/admin/:id & PUT /api/attendance/:id
+ * @access  Private (Admin)
+ */
+async function updateAttendance(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'Valid attendance ID is required.' });
+    }
+
+    const { check_in, check_out, status, remarks, reason } = req.body;
+
+    const adminRemark = (remarks || reason || '').trim();
+    if (!adminRemark) {
+      return res.status(400).json({
+        success: false,
+        message: 'An administrative reason/remark is required for manual attendance override.',
+      });
+    }
+
+    let normCheckIn = check_in !== undefined && check_in !== null ? check_in.trim() : undefined;
+    let normCheckOut = check_out !== undefined && check_out !== null ? check_out.trim() : undefined;
+
+    if (normCheckIn && normCheckIn.length === 5) normCheckIn = `${normCheckIn}:00`;
+    if (normCheckOut && normCheckOut.length === 5) normCheckOut = `${normCheckOut}:00`;
+
+    if (normCheckIn && !TIME_REGEX.test(normCheckIn)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid check_in time format. Expected HH:MM:SS.',
+      });
+    }
+
+    if (normCheckOut && !TIME_REGEX.test(normCheckOut)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid check_out time format. Expected HH:MM:SS.',
+      });
+    }
+
+    if (normCheckIn && normCheckOut) {
+      const inSec = parseTimeToSeconds(normCheckIn);
+      const outSec = parseTimeToSeconds(normCheckOut);
+      if (outSec <= inSec) {
+        return res.status(400).json({
+          success: false,
+          message: 'Check-out time must be after check-in time.',
+        });
+      }
+    }
+
+    const targetStatus = status ? status.trim().toLowerCase() : undefined;
+    if (targetStatus && !attendanceService.VALID_STATUSES.includes(targetStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Allowed values: ${attendanceService.VALID_STATUSES.join(', ')}.`,
+      });
+    }
+
+    const updated = await attendanceService.updateAttendance(
+      id,
+      {
+        check_in: normCheckIn,
+        check_out: normCheckOut,
+        status: targetStatus,
+        remarks: adminRemark,
+      },
+      req.user
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Attendance record updated successfully via Admin override.',
+      data: updated,
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
     }
     next(error);
   }
@@ -502,6 +625,7 @@ async function exportAttendance(req, res, next) {
 
 module.exports = {
   markAttendance,
+  updateAttendance,
   checkIn,
   checkOut,
   getAttendanceRecords,

@@ -165,11 +165,26 @@ export const getEmployeeAttendanceHistory = async (employeeId, params = {}) => {
   return response.data;
 };
 
+export const adminMarkAttendance = async (data) => {
+  const response = await api.post('/attendance/admin/mark', data);
+  return response.data;
+};
+
+export const adminUpdateAttendance = async (id, data) => {
+  const response = await api.put(`/attendance/admin/${id}`, data);
+  return response.data;
+};
+
 /**
  * Dynamic QR Code & GPS Geofencing API calls
  */
 export const generateQrCode = async (purpose = 'CHECK_IN') => {
   const response = await api.post('/attendance/qr/generate', { purpose });
+  return response.data;
+};
+
+export const getQrChallengeStatus = async (challengeId) => {
+  const response = await api.get(`/attendance/qr/status/${encodeURIComponent(challengeId)}`);
   return response.data;
 };
 
@@ -182,6 +197,7 @@ export const checkOutWithQr = async (payload) => {
   const response = await api.post('/attendance/qr/check-out', payload);
   return response.data;
 };
+
 
 /**
  * Rewards API calls
@@ -211,6 +227,16 @@ export const updateRewardItem = async (id, data) => {
   return response.data;
 };
 
+export const getRewardStats = async () => {
+  const response = await api.get('/rewards/stats');
+  return response.data;
+};
+
+export const getPointsHistory = async (params = {}) => {
+  const response = await api.get('/rewards/points-history', { params });
+  return response.data;
+};
+
 export const getAllRedemptions = async (status) => {
   const response = await api.get('/rewards/redemptions', { params: { status } });
   return response.data;
@@ -220,6 +246,45 @@ export const updateRedemptionStatus = async (id, status) => {
   const response = await api.patch(`/rewards/redemptions/${id}`, { status });
   return response.data;
 };
+
+/**
+ * WebAuthn & Platform Authenticator API calls
+ */
+export const getWebAuthnRegisterOptions = async () => {
+  const response = await api.get('/auth/webauthn/register/options');
+  return response.data;
+};
+
+export const verifyWebAuthnRegistration = async (payload) => {
+  const response = await api.post('/auth/webauthn/register/verify', payload);
+  return response.data;
+};
+
+export const getWebAuthnAuthOptions = async () => {
+  const response = await api.get('/auth/webauthn/authenticate/options');
+  return response.data;
+};
+
+export const verifyWebAuthnAuthentication = async (payload) => {
+  const response = await api.post('/auth/webauthn/authenticate/verify', payload);
+  return response.data;
+};
+
+export const getWebAuthnCredentials = async () => {
+  const response = await api.get('/auth/webauthn/credentials');
+  return response.data;
+};
+
+export const deleteWebAuthnCredential = async (id) => {
+  const response = await api.delete(`/auth/webauthn/credentials/${id}`);
+  return response.data;
+};
+
+export const logWebAuthnStatus = async (payload) => {
+  const response = await api.post('/auth/webauthn/status', payload);
+  return response.data;
+};
+
 
 /**
  * Attendance Policies API calls (Admin)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { generateQrCode } from '../services/api';
+import { generateQrCode, getQrChallengeStatus } from '../services/api';
 
 export default function QrDisplayPortalPage() {
   const [selectedPurpose, setSelectedPurpose] = useState('CHECK_IN'); // 'CHECK_IN' | 'CHECK_OUT'
@@ -58,6 +58,47 @@ export default function QrDisplayPortalPage() {
 
     return () => clearInterval(timerRef.current);
   }, [statusState, timeLeft]);
+
+  // Polling to detect when an employee has successfully scanned the QR
+  useEffect(() => {
+    if (statusState !== 'ACTIVE' || !qrData?.challenge_id) return;
+
+    let isSubscribed = true;
+
+    const checkChallengeStatus = async () => {
+      try {
+        const response = await getQrChallengeStatus(qrData.challenge_id);
+        if (!isSubscribed) return;
+        if (response?.success && response.data?.used) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setStatusState('SUCCESS');
+        }
+      } catch (err) {
+        // Silently ignore transient network or polling errors
+      }
+    };
+
+    const pollInterval = setInterval(checkChallengeStatus, 1000);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(pollInterval);
+    };
+  }, [statusState, qrData?.challenge_id]);
+
+  // Handle temporary success state (2.5s) before returning automatically to IDLE
+  useEffect(() => {
+    if (statusState !== 'SUCCESS') return;
+
+    const returnToIdleTimer = setTimeout(() => {
+      setQrData(null);
+      setTimeLeft(0);
+      setStatusState('IDLE');
+    }, 2500);
+
+    return () => clearTimeout(returnToIdleTimer);
+  }, [statusState]);
+
 
   const validityTotal = qrData?.validity_seconds || 30;
   const progressPercent = Math.max(0, Math.min(100, (timeLeft / validityTotal) * 100));
@@ -121,18 +162,28 @@ export default function QrDisplayPortalPage() {
           <div className={`px-3 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wider flex items-center space-x-2 ${
             statusState === 'ACTIVE'
               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : statusState === 'SUCCESS'
+              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
               : statusState === 'EXPIRED'
               ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
               : 'bg-slate-800 border-slate-700 text-slate-400'
           }`}>
             <span className={`w-2 h-2 rounded-full ${
-              statusState === 'ACTIVE'
+              statusState === 'ACTIVE' || statusState === 'SUCCESS'
                 ? 'bg-emerald-400 animate-ping'
                 : statusState === 'EXPIRED'
                 ? 'bg-rose-400'
                 : 'bg-slate-500'
             }`}></span>
-            <span>{statusState === 'ACTIVE' ? `${selectedPurpose.replace('_', '-')} LIVE` : statusState === 'EXPIRED' ? 'Expired' : 'Idle Kiosk'}</span>
+            <span>
+              {statusState === 'ACTIVE'
+                ? `${selectedPurpose.replace('_', '-')} LIVE`
+                : statusState === 'SUCCESS'
+                ? 'Scanned Successfully'
+                : statusState === 'EXPIRED'
+                ? 'Expired'
+                : 'Idle Kiosk'}
+            </span>
           </div>
 
           <button
@@ -248,6 +299,31 @@ export default function QrDisplayPortalPage() {
                 {selectedPurpose === 'CHECK_IN' ? 'CHECK-IN QR CODE' : 'CHECK-OUT QR CODE'}
               </p>
               <p className="text-xs font-medium text-slate-400">Scan with your phone camera</p>
+            </div>
+          </div>
+        ) : statusState === 'SUCCESS' ? (
+          /* SUCCESS STATE */
+          <div className="space-y-6 max-w-md w-full">
+            <div className="bg-emerald-950/30 border border-emerald-500/40 p-8 rounded-3xl text-center space-y-4 shadow-2xl shadow-emerald-950/50">
+              <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
+                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-2xl font-black text-emerald-300 tracking-tight">
+                  Scanned Successfully
+                </h3>
+                <p className="text-sm font-medium text-emerald-400/90">
+                  Attendance recorded successfully.
+                </p>
+              </div>
+              <div className="pt-2">
+                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-900/40 border border-emerald-500/30 text-xs font-semibold text-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>Standby for next scan...</span>
+                </div>
+              </div>
             </div>
           </div>
         ) : statusState === 'EXPIRED' ? (

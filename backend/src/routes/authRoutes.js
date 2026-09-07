@@ -24,6 +24,8 @@ router.get('/register/invitation/:token', validateInvitationToken);
  */
 router.post('/register/employee', registerEmployee);
 
+const webauthnController = require('../controllers/webauthnController');
+
 /**
  * @route   GET /api/auth/me
  * @desc    Get currently authenticated user info from token
@@ -44,4 +46,20 @@ router.get('/admin-check', authenticateToken, requireAdmin, (req, res) => {
   });
 });
 
+/**
+ * WebAuthn / Platform Authenticator Routes (Zero raw biometrics stored)
+ */
+router.get('/webauthn/register/options', authenticateToken, webauthnController.getRegistrationOptions);
+router.post('/webauthn/register/options', authenticateToken, webauthnController.getRegistrationOptions);
+router.post('/webauthn/register/verify', authenticateToken, webauthnController.verifyRegistrationResponse);
+router.get('/webauthn/authenticate/options', authenticateToken, webauthnController.getAuthenticationOptions);
+router.post('/webauthn/authenticate/options', authenticateToken, webauthnController.getAuthenticationOptions);
+router.get('/webauthn/auth/options', authenticateToken, webauthnController.getAuthenticationOptions);
+router.post('/webauthn/auth/options', authenticateToken, webauthnController.getAuthenticationOptions);
+router.post('/webauthn/authenticate/verify', authenticateToken, webauthnController.verifyAuthenticationResponse);
+router.get('/webauthn/credentials', authenticateToken, webauthnController.listCredentials);
+router.delete('/webauthn/credentials/:id', authenticateToken, webauthnController.removeCredential);
+router.post('/webauthn/status', authenticateToken, webauthnController.logWebAuthnStatus);
+
 module.exports = router;
+

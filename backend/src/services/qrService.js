@@ -138,8 +138,44 @@ async function validateAndConsumeChallengeForEmployee(rawToken, employeeId, expe
   };
 }
 
+/**
+ * Check if a QR challenge has been successfully used by an employee
+ */
+async function getChallengeStatus(challengeId) {
+  if (!challengeId) return null;
+
+  const [rows] = await pool.query(
+    `SELECT c.id, c.challenge_id, c.purpose, c.expires_at,
+            COUNT(u.id) AS use_count,
+            MAX(u.used_at) AS last_used_at
+     FROM qr_challenges c
+     LEFT JOIN qr_challenge_uses u ON u.challenge_id = c.id
+     WHERE c.challenge_id = ?
+     GROUP BY c.id`,
+    [challengeId]
+  );
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const row = rows[0];
+  const useCount = Number(row.use_count) || 0;
+
+  return {
+    challenge_id: row.challenge_id,
+    purpose: row.purpose,
+    expires_at: row.expires_at,
+    used: useCount > 0,
+    use_count: useCount,
+    last_used_at: row.last_used_at,
+  };
+}
+
 module.exports = {
   hashToken,
   generateChallenge,
   validateAndConsumeChallengeForEmployee,
+  getChallengeStatus,
 };
+

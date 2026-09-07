@@ -27,11 +27,20 @@ router.get('/catalog', rewardController.getCatalog);
 router.post('/redeem', rewardController.redeemRewardItem);
 
 /**
+ * @route   GET /api/rewards/points-history
+ * @desc    Get real daily points history (7, 30, or 90 days)
+ * @access  Private (Authenticated)
+ */
+router.get('/points-history', rewardController.getPointsHistory);
+
+/**
  * Admin Routes
  */
+router.get('/stats', requireAdmin, rewardController.getRewardStats);
 router.post('/', requireAdmin, rewardController.createRewardItem);
 router.put('/:id', requireAdmin, rewardController.updateRewardItem);
 router.get('/redemptions', requireAdmin, rewardController.getRedemptions);
 router.patch('/redemptions/:id', requireAdmin, rewardController.updateRedemption);
 
 module.exports = router;
+

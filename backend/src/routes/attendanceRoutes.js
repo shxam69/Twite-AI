@@ -16,6 +16,13 @@ router.use(authenticateToken);
 router.post('/qr/generate', requireAdmin, qrController.generateQr);
 
 /**
+ * @route   GET /api/attendance/qr/status/:challengeId
+ * @desc    Get scan/usage status of a QR challenge (Admin only)
+ * @access  Private (Admin only)
+ */
+router.get('/qr/status/:challengeId', requireAdmin, qrController.getChallengeStatus);
+
+/**
  * @route   POST /api/attendance/qr/check-in
  * @desc    Check-in with dynamic QR code & GPS geofencing (Employee)
  * @access  Private (Authenticated)
@@ -79,11 +86,20 @@ router.get('/summary', attendanceController.getAttendanceSummary);
 router.get('/employee/:employeeId', attendanceController.getEmployeeAttendanceHistory);
 
 /**
- * @route   POST /api/attendance
- * @desc    Manually mark/create an attendance record
+ * @route   POST /api/attendance/admin/mark
+ * @desc    Manually create/mark an attendance record (Admin Override)
  * @access  Private (Admin only)
  */
+router.post('/admin/mark', requireAdmin, attendanceController.markAttendance);
 router.post('/', requireAdmin, attendanceController.markAttendance);
+
+/**
+ * @route   PUT /api/attendance/admin/:id
+ * @desc    Manually update an existing attendance record (Admin Override)
+ * @access  Private (Admin only)
+ */
+router.put('/admin/:id', requireAdmin, attendanceController.updateAttendance);
+router.put('/:id', requireAdmin, attendanceController.updateAttendance);
 
 /**
  * @route   GET /api/attendance

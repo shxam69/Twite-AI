@@ -14,6 +14,7 @@ import EmployeeRegistrationPage from './pages/EmployeeRegistrationPage';
 import LeaveRequestsPage from './pages/LeaveRequestsPage';
 import AttendanceCorrectionsPage from './pages/AttendanceCorrectionsPage';
 import AuditTimelinePage from './pages/AuditTimelinePage';
+import AdminRewardsPage from './pages/AdminRewardsPage';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
               <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                 <Route path="/employees" element={<EmployeesPage />} />
                 <Route path="/attendance/qr" element={<Navigate to="/qr-display" replace />} />
+                <Route path="/admin/rewards" element={<AdminRewardsPage />} />
                 <Route path="/admin/help-requests" element={<AdminHelpRequestsPage />} />
                 <Route path="/admin/audit-log" element={<AuditTimelinePage />} />
                 <Route path="/attendance/settings" element={<AttendanceSettingsPage />} />
@@ -46,6 +48,7 @@ export default function App() {
               <Route path="/attendance" element={<AttendancePage />} />
             </Route>
           </Route>
+
 
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

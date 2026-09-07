@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   getAttendancePolicies,
   updateAttendancePolicy,
-  getRewardsCatalog,
-  createRewardItem,
-  getAllRedemptions,
-  updateRedemptionStatus,
 } from '../services/api';
 
 const ALLOWED_POLICY_KEYS = [
@@ -31,13 +27,6 @@ export default function AttendanceSettingsPage() {
   const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '' }
   const [locating, setLocating] = useState(false);
 
-  // Rewards Management State
-  const [catalogItems, setCatalogItems] = useState([]);
-  const [redemptions, setRedemptions] = useState([]);
-  const [showAddRewardModal, setShowAddRewardModal] = useState(false);
-  const [newReward, setNewReward] = useState({ title: '', description: '', points_cost: 100, stock_quantity: 10 });
-  const [rewardSubmitting, setRewardSubmitting] = useState(false);
-
   const fetchPolicies = async () => {
     try {
       setLoading(true);
@@ -59,21 +48,10 @@ export default function AttendanceSettingsPage() {
     }
   };
 
-  const fetchRewardsData = async () => {
-    try {
-      const catalogRes = await getRewardsCatalog(true);
-      if (catalogRes.success) setCatalogItems(catalogRes.data || []);
-      const redemptionsRes = await getAllRedemptions();
-      if (redemptionsRes.success) setRedemptions(redemptionsRes.data || []);
-    } catch (err) {
-      console.error('Error fetching rewards admin data:', err);
-    }
-  };
-
   useEffect(() => {
     fetchPolicies();
-    fetchRewardsData();
   }, []);
+
 
   const handleChange = (key, value) => {
     if (!key || !ALLOWED_POLICY_KEYS.includes(key)) return;
@@ -552,7 +530,7 @@ export default function AttendanceSettingsPage() {
             <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800 rounded-md">Reward Policy</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Set standard shift hours and points multiplier per extra hour worked beyond standard duration.
+            Set standard shift hours and points multiplier per extra hour worked beyond standard duration. Manage full catalog and redemptions in the dedicated Rewards page.
           </p>
         </div>
 
@@ -607,203 +585,7 @@ export default function AttendanceSettingsPage() {
           </div>
         </div>
       </div>
-
-      {/* Group 6: Rewards Catalog & Employee Redemptions Admin Panel */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800">Rewards Catalog & Redemptions Manager</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Manage rewards offered in catalog and fulfill employee point redemptions.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setShowAddRewardModal(true)}
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer shrink-0"
-          >
-            <span>➕</span>
-            <span>Add Catalog Item</span>
-          </button>
-        </div>
-
-        {/* Catalog Table */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Catalog Items</h3>
-          <div className="overflow-x-auto border border-slate-100 rounded-xl">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 border-b border-slate-100 font-bold text-slate-400 uppercase">
-                <tr>
-                  <th className="py-2.5 px-4">Title</th>
-                  <th className="py-2.5 px-4">Description</th>
-                  <th className="py-2.5 px-4">Points Cost</th>
-                  <th className="py-2.5 px-4">Stock</th>
-                  <th className="py-2.5 px-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {catalogItems.length === 0 ? (
-                  <tr><td colSpan={5} className="py-4 text-center text-slate-400">No reward items created yet.</td></tr>
-                ) : (
-                  catalogItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="py-2.5 px-4 font-semibold text-slate-800">{item.title}</td>
-                      <td className="py-2.5 px-4 text-slate-600 max-w-xs truncate">{item.description}</td>
-                      <td className="py-2.5 px-4 font-mono font-bold text-amber-600">{item.points_cost} pts</td>
-                      <td className="py-2.5 px-4 font-mono">{item.stock_quantity}</td>
-                      <td className="py-2.5 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${item.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
-                          {item.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Redemptions Management Table */}
-        <div className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Employee Redemptions</h3>
-          <div className="overflow-x-auto border border-slate-100 rounded-xl">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 border-b border-slate-100 font-bold text-slate-400 uppercase">
-                <tr>
-                  <th className="py-2.5 px-4">Redemption ID</th>
-                  <th className="py-2.5 px-4">Employee</th>
-                  <th className="py-2.5 px-4">Reward Item</th>
-                  <th className="py-2.5 px-4">Points Spent</th>
-                  <th className="py-2.5 px-4">Status</th>
-                  <th className="py-2.5 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {redemptions.length === 0 ? (
-                  <tr><td colSpan={6} className="py-4 text-center text-slate-400">No redemptions submitted yet.</td></tr>
-                ) : (
-                  redemptions.map((red) => (
-                    <tr key={red.id} className="hover:bg-slate-50">
-                      <td className="py-2.5 px-4 font-mono text-slate-500">#{red.id}</td>
-                      <td className="py-2.5 px-4 font-semibold text-slate-800">
-                        {red.employee_name} <span className="text-[10px] text-slate-400">({red.employee_code})</span>
-                      </td>
-                      <td className="py-2.5 px-4 font-medium text-slate-700">{red.reward_title}</td>
-                      <td className="py-2.5 px-4 font-mono font-bold text-amber-600">{red.points_spent} pts</td>
-                      <td className="py-2.5 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          red.status === 'fulfilled' ? 'bg-emerald-100 text-emerald-800' :
-                          red.status === 'cancelled' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {red.status}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 text-right space-x-2">
-                        {red.status === 'requested' && (
-                          <>
-                            <button
-                              onClick={() => handleUpdateRedemption(red.id, 'fulfilled')}
-                              className="px-2 py-1 bg-emerald-600 text-white rounded font-semibold text-[10px] hover:bg-emerald-700 cursor-pointer"
-                            >
-                              Fulfill
-                            </button>
-                            <button
-                              onClick={() => handleUpdateRedemption(red.id, 'cancelled')}
-                              className="px-2 py-1 bg-rose-600 text-white rounded font-semibold text-[10px] hover:bg-rose-700 cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Add Reward Modal */}
-      {showAddRewardModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-800 text-base">Add New Catalog Reward</h3>
-              <button onClick={() => setShowAddRewardModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
-            </div>
-
-            <form onSubmit={handleCreateReward} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Title</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Starbucks Gift Card"
-                  value={newReward.title}
-                  onChange={(e) => setNewReward((r) => ({ ...r, title: e.target.value }))}
-                  className="w-full p-2 border border-slate-300 rounded-lg text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Description</label>
-                <textarea
-                  rows={2}
-                  placeholder="Reward details..."
-                  value={newReward.description}
-                  onChange={(e) => setNewReward((r) => ({ ...r, description: e.target.value }))}
-                  className="w-full p-2 border border-slate-300 rounded-lg text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Points Cost</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={newReward.points_cost}
-                    onChange={(e) => setNewReward((r) => ({ ...r, points_cost: Number(e.target.value) }))}
-                    className="w-full p-2 border border-slate-300 rounded-lg text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Stock Quantity</label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={newReward.stock_quantity}
-                    onChange={(e) => setNewReward((r) => ({ ...r, stock_quantity: Number(e.target.value) }))}
-                    className="w-full p-2 border border-slate-300 rounded-lg text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddRewardModal(false)}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={rewardSubmitting}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg cursor-pointer disabled:opacity-50"
-                >
-                  {rewardSubmitting ? 'Creating...' : 'Create Reward'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+

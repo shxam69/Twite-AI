@@ -107,8 +107,8 @@ async function getEmployeeRewardAccount(employeeId) {
  */
 async function getRewardsCatalog(includeInactive = false) {
   const sql = includeInactive
-    ? `SELECT id, name, name AS title, description, points_cost, status, created_at FROM rewards ORDER BY points_cost ASC`
-    : `SELECT id, name, name AS title, description, points_cost, status, created_at FROM rewards WHERE status = 'active' ORDER BY points_cost ASC`;
+    ? `SELECT id, name, name AS title, description, points_cost, stock_quantity, status, created_at FROM rewards ORDER BY points_cost ASC`
+    : `SELECT id, name, name AS title, description, points_cost, stock_quantity, status, created_at FROM rewards WHERE status = 'active' ORDER BY points_cost ASC`;
   const [rows] = await pool.query(sql);
   return rows;
 }
@@ -120,6 +120,7 @@ async function createReward(data) {
   const name = (data.name || data.title || '').trim();
   const description = data.description ? data.description.trim() : '';
   const points_cost = data.points_cost !== undefined ? parseInt(data.points_cost, 10) : 0;
+  const stock_quantity = data.stock_quantity !== undefined ? Math.max(0, parseInt(data.stock_quantity, 10)) : 100;
   const status = data.status || 'active';
 
   if (!name || isNaN(points_cost) || points_cost < 0) {
@@ -129,8 +130,8 @@ async function createReward(data) {
   }
 
   const [result] = await pool.query(
-    `INSERT INTO rewards (name, description, points_cost, status) VALUES (?, ?, ?, ?)`,
-    [name, description, points_cost, status]
+    `INSERT INTO rewards (name, description, points_cost, stock_quantity, status) VALUES (?, ?, ?, ?, ?)`,
+    [name, description, points_cost, stock_quantity, status]
   );
 
   return {
@@ -139,6 +140,7 @@ async function createReward(data) {
     title: name,
     description,
     points_cost,
+    stock_quantity,
     status,
   };
 }
@@ -147,7 +149,7 @@ async function createReward(data) {
  * Update reward item (Admin)
  */
 async function updateReward(id, data) {
-  const { name, description, points_cost, status } = data;
+  const { name, title, description, points_cost, stock_quantity, status } = data;
 
   const [existing] = await pool.query(`SELECT id FROM rewards WHERE id = ? LIMIT 1`, [id]);
   if (existing.length === 0) {
@@ -159,9 +161,10 @@ async function updateReward(id, data) {
   const updates = [];
   const params = [];
 
-  if (name !== undefined) {
+  const rewardName = name !== undefined ? name : title;
+  if (rewardName !== undefined) {
     updates.push('name = ?');
-    params.push(name.trim());
+    params.push(rewardName.trim());
   }
   if (description !== undefined) {
     updates.push('description = ?');
@@ -169,7 +172,11 @@ async function updateReward(id, data) {
   }
   if (points_cost !== undefined) {
     updates.push('points_cost = ?');
-    params.push(parseInt(points_cost, 10));
+    params.push(Math.max(0, parseInt(points_cost, 10)));
+  }
+  if (stock_quantity !== undefined) {
+    updates.push('stock_quantity = ?');
+    params.push(Math.max(0, parseInt(stock_quantity, 10)));
   }
   if (status !== undefined) {
     updates.push('status = ?');
@@ -181,7 +188,7 @@ async function updateReward(id, data) {
     await pool.query(`UPDATE rewards SET ${updates.join(', ')} WHERE id = ?`, params);
   }
 
-  const [updated] = await pool.query(`SELECT id, name, description, points_cost, status FROM rewards WHERE id = ?`, [id]);
+  const [updated] = await pool.query(`SELECT id, name, name AS title, description, points_cost, stock_quantity, status FROM rewards WHERE id = ?`, [id]);
   return updated[0];
 }
 
@@ -358,6 +365,170 @@ async function updateRedemptionStatus(id, newStatus) {
   }
 }
 
+/**
+ * Get aggregated reward analytics & stats (Admin)
+ */
+async function getAdminRewardStats() {
+  // 1. Total points issued (sum of EXTRA_HOURS_EARNED and ADMIN_ADJUSTMENT where amount > 0)
+  const [issuedRows] = await pool.query(
+    `SELECT COALESCE(SUM(amount), 0) AS total_issued 
+     FROM employee_reward_transactions 
+     WHERE amount > 0`
+  );
+  const total_points_issued = Number(issuedRows[0].total_issued) || 0;
+
+  // 2. Total points redeemed
+  const [redeemedRows] = await pool.query(
+    `SELECT COALESCE(SUM(ABS(amount)), 0) AS total_redeemed 
+     FROM employee_reward_transactions 
+     WHERE type = 'REWARD_REDEEMED'`
+  );
+  const total_points_redeemed = Number(redeemedRows[0].total_redeemed) || 0;
+
+  // 3. Participating employees
+  const [partRows] = await pool.query(
+    `SELECT COUNT(DISTINCT employee_id) AS total_participating 
+     FROM employee_reward_transactions`
+  );
+  const total_active_participants = Number(partRows[0].total_participating) || 0;
+
+  // 4. Total redemptions count
+  const [redCountRows] = await pool.query(
+    `SELECT COUNT(*) AS total_count FROM reward_redemptions`
+  );
+  const total_redemptions = Number(redCountRows[0].total_count) || 0;
+
+  // 5. Points earned this week (last 7 days)
+  const [weekRows] = await pool.query(
+    `SELECT COALESCE(SUM(amount), 0) AS week_points 
+     FROM employee_reward_transactions 
+     WHERE amount > 0 AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)`
+  );
+  const points_this_week = Number(weekRows[0].week_points) || 0;
+
+  // 6. Points earned this month (current calendar month)
+  const [monthRows] = await pool.query(
+    `SELECT COALESCE(SUM(amount), 0) AS month_points 
+     FROM employee_reward_transactions 
+     WHERE amount > 0 AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')`
+  );
+  const points_this_month = Number(monthRows[0].month_points) || 0;
+
+  // 7. Top 5 point earners
+  const [topEarners] = await pool.query(
+    `SELECT 
+       e.id, 
+       e.name, 
+       e.employee_id AS employee_code, 
+       e.department, 
+       a.balance, 
+       a.total_earned
+     FROM employee_reward_accounts a
+     JOIN employees e ON e.id = a.employee_id
+     ORDER BY a.total_earned DESC, a.balance DESC
+     LIMIT 5`
+  );
+
+  // 8. Recent reward activity (transactions & redemptions)
+  const [recentTransactions] = await pool.query(
+    `SELECT 
+       t.id, 
+       t.amount, 
+       t.type, 
+       t.description, 
+       t.created_at, 
+       e.name AS employee_name, 
+       e.employee_id AS employee_code
+     FROM employee_reward_transactions t
+     JOIN employees e ON e.id = t.employee_id
+     ORDER BY t.id DESC
+     LIMIT 10`
+  );
+
+  // 9. Weekly points trend (last 7 days by day)
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const weekly_trend = [];
+  const today = new Date();
+  
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = dayNames[d.getDay()];
+
+    const [dayRows] = await pool.query(
+      `SELECT COALESCE(SUM(amount), 0) AS day_points
+       FROM employee_reward_transactions
+       WHERE amount > 0 AND DATE(created_at) = ?`,
+      [dateStr]
+    );
+
+    weekly_trend.push({
+      date: dateStr,
+      day_name: dayName,
+      points: Number(dayRows[0].day_points) || 0,
+    });
+  }
+
+  return {
+    total_points_issued,
+    total_points_awarded: total_points_issued,
+    total_points_redeemed,
+    total_active_participants,
+    total_redemptions,
+    points_this_week,
+    points_this_month,
+    top_earners: topEarners,
+    recent_activity: recentTransactions,
+    weekly_trend,
+  };
+}
+
+/**
+ * Get daily points history for an employee or all (7, 30, or 90 days)
+ * Real DB data only, every single day returned with 0 for days with no activity
+ */
+async function getPointsHistory(employeeId, days = 7) {
+  const numDays = [7, 30, 90].includes(Number(days)) ? Number(days) : 7;
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const history = [];
+  const today = new Date();
+
+  let total_period_earned = 0;
+
+  for (let i = numDays - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = dayNames[d.getDay()];
+
+    const query = employeeId
+      ? `SELECT COALESCE(SUM(amount), 0) AS day_points
+         FROM employee_reward_transactions
+         WHERE employee_id = ? AND amount > 0 AND DATE(created_at) = ?`
+      : `SELECT COALESCE(SUM(amount), 0) AS day_points
+         FROM employee_reward_transactions
+         WHERE amount > 0 AND DATE(created_at) = ?`;
+
+    const params = employeeId ? [employeeId, dateStr] : [dateStr];
+    const [dayRows] = await pool.query(query, params);
+    const points = Number(dayRows[0].day_points) || 0;
+    total_period_earned += points;
+
+    history.push({
+      date: dateStr,
+      day_name: dayName,
+      points,
+    });
+  }
+
+  return {
+    days: numDays,
+    total_period_earned,
+    history,
+  };
+}
+
 module.exports = {
   awardExtraHoursPoints,
   getEmployeeRewardAccount,
@@ -367,4 +538,6 @@ module.exports = {
   redeemReward,
   getRedemptions,
   updateRedemptionStatus,
+  getAdminRewardStats,
+  getPointsHistory,
 };

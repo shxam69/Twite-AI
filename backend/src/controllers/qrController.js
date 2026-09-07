@@ -50,7 +50,7 @@ async function checkInWithQr(req, res, next) {
       });
     }
 
-    const { token, latitude, longitude } = req.body;
+    const { token, latitude, longitude, verification_method } = req.body;
 
     if (!token || typeof token !== 'string' || !token.trim()) {
       return res.status(400).json({
@@ -59,7 +59,8 @@ async function checkInWithQr(req, res, next) {
       });
     }
 
-    const record = await attendanceService.checkInWithQr(employeeId, token.trim(), latitude, longitude);
+    const verificationMethod = verification_method === 'QR_WEBAUTHN' ? 'QR_WEBAUTHN' : 'QR';
+    const record = await attendanceService.checkInWithQr(employeeId, token.trim(), latitude, longitude, verificationMethod);
 
     return res.status(201).json({
       success: true,
@@ -108,7 +109,7 @@ async function checkOutWithQr(req, res, next) {
       });
     }
 
-    const { token, latitude, longitude } = req.body;
+    const { token, latitude, longitude, verification_method } = req.body;
 
     if (!token || typeof token !== 'string' || !token.trim()) {
       return res.status(400).json({
@@ -117,7 +118,8 @@ async function checkOutWithQr(req, res, next) {
       });
     }
 
-    const record = await attendanceService.checkOutWithQr(employeeId, token.trim(), latitude, longitude);
+    const verificationMethod = verification_method === 'QR_WEBAUTHN' ? 'QR_WEBAUTHN' : 'QR';
+    const record = await attendanceService.checkOutWithQr(employeeId, token.trim(), latitude, longitude, verificationMethod);
 
     return res.status(200).json({
       success: true,
@@ -140,8 +142,42 @@ async function checkOutWithQr(req, res, next) {
   }
 }
 
+/**
+ * @desc    Get status of a QR challenge to detect employee scan completion (Admin only)
+ * @route   GET /api/attendance/qr/status/:challengeId
+ * @access  Private (Admin)
+ */
+async function getChallengeStatus(req, res, next) {
+  try {
+    const { challengeId } = req.params;
+    if (!challengeId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Challenge ID is required.',
+      });
+    }
+
+    const status = await qrService.getChallengeStatus(challengeId);
+    if (!status) {
+      return res.status(404).json({
+        success: false,
+        message: 'QR challenge not found.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: status,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   generateQr,
   checkInWithQr,
   checkOutWithQr,
+  getChallengeStatus,
 };
+

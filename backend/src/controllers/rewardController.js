@@ -90,6 +90,26 @@ async function updateRedemption(req, res, next) {
   }
 }
 
+async function getRewardStats(req, res, next) {
+  try {
+    const stats = await rewardService.getAdminRewardStats();
+    return res.status(200).json({ success: true, data: stats });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getPointsHistory(req, res, next) {
+  try {
+    const days = parseInt(req.query.days, 10) || 7;
+    const employeeId = req.user.role === 'employee' ? req.user.employee_id : (req.query.employee_id ? parseInt(req.query.employee_id, 10) : null);
+    const history = await rewardService.getPointsHistory(employeeId, days);
+    return res.status(200).json({ success: true, data: history });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getMyAccount,
   getCatalog,
@@ -98,4 +118,7 @@ module.exports = {
   redeemRewardItem,
   getRedemptions,
   updateRedemption,
+  getRewardStats,
+  getPointsHistory,
 };
+
