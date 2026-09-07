@@ -123,6 +123,9 @@ async function checkOutWithQr(req, res, next) {
       success: true,
       message: 'Check-out recorded successfully via QR code.',
       data: record,
+      worked_hours: record.worked_hours,
+      extra_hours: record.extra_hours,
+      points_awarded: record.points_awarded,
     });
   } catch (error) {
     if (error.status) {

@@ -13,6 +13,8 @@ const DEFAULT_POLICIES = {
   grace_period_minutes: '15',
   temporary_exit_enabled: 'true',
   monthly_exit_allowance: '2',
+  standard_work_hours: '8',
+  reward_points_per_extra_hour: '100',
 };
 
 // In-memory cache for fast lookups

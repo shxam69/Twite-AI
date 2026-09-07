@@ -95,6 +95,8 @@ async function getEmployeeRewardAccount(employeeId) {
 
   return {
     account,
+    points_balance: account.balance,
+    total_earned: account.total_earned,
     transactions,
     redemptions,
   };
@@ -105,8 +107,8 @@ async function getEmployeeRewardAccount(employeeId) {
  */
 async function getRewardsCatalog(includeInactive = false) {
   const sql = includeInactive
-    ? `SELECT id, name, description, points_cost, status, created_at FROM rewards ORDER BY points_cost ASC`
-    : `SELECT id, name, description, points_cost, status, created_at FROM rewards WHERE status = 'active' ORDER BY points_cost ASC`;
+    ? `SELECT id, name, name AS title, description, points_cost, status, created_at FROM rewards ORDER BY points_cost ASC`
+    : `SELECT id, name, name AS title, description, points_cost, status, created_at FROM rewards WHERE status = 'active' ORDER BY points_cost ASC`;
   const [rows] = await pool.query(sql);
   return rows;
 }
@@ -115,24 +117,28 @@ async function getRewardsCatalog(includeInactive = false) {
  * Create reward item (Admin)
  */
 async function createReward(data) {
-  const { name, description, points_cost, status = 'active' } = data;
+  const name = (data.name || data.title || '').trim();
+  const description = data.description ? data.description.trim() : '';
+  const points_cost = data.points_cost !== undefined ? parseInt(data.points_cost, 10) : 0;
+  const status = data.status || 'active';
 
-  if (!name || !name.trim() || !points_cost || points_cost <= 0) {
-    const error = new Error('Reward name and positive points_cost are required.');
+  if (!name || isNaN(points_cost) || points_cost < 0) {
+    const error = new Error('Reward title/name and non-negative points_cost are required.');
     error.status = 400;
     throw error;
   }
 
   const [result] = await pool.query(
     `INSERT INTO rewards (name, description, points_cost, status) VALUES (?, ?, ?, ?)`,
-    [name.trim(), description ? description.trim() : '', parseInt(points_cost, 10), status]
+    [name, description, points_cost, status]
   );
 
   return {
     id: result.insertId,
-    name: name.trim(),
-    description: description ? description.trim() : '',
-    points_cost: parseInt(points_cost, 10),
+    name,
+    title: name,
+    description,
+    points_cost,
     status,
   };
 }

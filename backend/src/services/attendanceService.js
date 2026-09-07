@@ -54,6 +54,18 @@ function getCurrentTime() {
 }
 
 /**
+ * Helper to calculate duration in seconds between check_in and check_out time strings (HH:MM:SS)
+ */
+function getWorkedDurationInSeconds(checkInStr, checkOutStr) {
+  if (!checkInStr || !checkOutStr) return 0;
+  const todayStr = getCurrentDate();
+  const startMs = new Date(`${todayStr}T${checkInStr}`).getTime();
+  const endMs = new Date(`${todayStr}T${checkOutStr}`).getTime();
+  let diffSec = Math.floor((endMs - startMs) / 1000);
+  return isNaN(diffSec) || diffSec < 0 ? 0 : diffSec;
+}
+
+/**
  * Helper to verify an employee exists and return their record
  */
 async function findEmployee(employeeId) {
@@ -778,7 +790,13 @@ async function checkOutWithQr(employeeId, rawToken, latitude, longitude) {
       },
     });
 
-    return getAttendanceById(attendance.id);
+    const record = await getAttendanceById(attendance.id);
+    return {
+      ...record,
+      worked_hours: parseFloat(workedHours.toFixed(2)),
+      extra_hours: rewardResult.extraHours || 0,
+      points_awarded: rewardResult.pointsAwarded || 0,
+    };
   } catch (error) {
     await connection.rollback();
 

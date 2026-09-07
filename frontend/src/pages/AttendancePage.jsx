@@ -651,34 +651,13 @@ export default function AttendancePage() {
             </div>
           )}
 
-          {/* Manual Check-In / Check-Out Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 pt-2">
-            <button
-              onClick={handleCheckInAction}
-              disabled={!isNotCheckedIn || actionLoading || !hasLinkedProfile}
-              className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-xs ${
-                isNotCheckedIn && hasLinkedProfile && !actionLoading
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 cursor-pointer'
-                  : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-              }`}
-            >
-              <span>⏱️</span>
-              {actionLoading ? 'Processing...' : isCheckedIn || isCheckedOut ? 'Already Checked In' : 'Manual Check In'}
-            </button>
-
-            <button
-              onClick={handleCheckOutAction}
-              disabled={!isCheckedIn || actionLoading || !hasLinkedProfile}
-              className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-xs ${
-                isCheckedIn && hasLinkedProfile && !actionLoading
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                  : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-              }`}
-            >
-              <span>⌛</span>
-              {actionLoading ? 'Processing...' : isCheckedOut ? 'Checked Out for Today' : 'Check Out'}
-            </button>
-          </div>
+          {/* Shift Complete Status */}
+          {isCheckedOut && (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Shift Completed</span>
+              <p className="text-sm font-bold text-slate-700 mt-0.5">You have checked out for today. See you tomorrow!</p>
+            </div>
+          )}
 
           {/* Help Support Request Link */}
           <div className="pt-2 flex justify-end">
