@@ -29,21 +29,6 @@ export default function Sidebar({ isOpen, onClose }) {
           ),
         },
         {
-          to: '/attendance',
-          label: 'Attendance',
-          roles: ['admin', 'employee'],
-          icon: (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ),
-        },
-      ],
-    },
-    {
-      title: 'Workforce',
-      items: [
-        {
           to: '/employees',
           label: 'Employees',
           roles: ['admin'],
@@ -53,6 +38,32 @@ export default function Sidebar({ isOpen, onClose }) {
             </svg>
           ),
         },
+        {
+          to: '/attendance',
+          label: 'Attendance',
+          roles: ['admin', 'employee'],
+          icon: (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+        },
+        {
+          to: '/qr-display',
+          label: 'QR Terminal',
+          roles: ['admin'],
+          external: true,
+          icon: (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+          ),
+        },
+      ],
+    },
+    {
+      title: 'Workforce',
+      items: [
         {
           to: '/leaves',
           label: 'Leave Requests',
@@ -73,32 +84,6 @@ export default function Sidebar({ isOpen, onClose }) {
             </svg>
           ),
         },
-      ],
-    },
-    {
-      title: 'Insights',
-      items: [
-        {
-          to: '/qr-display',
-          label: 'QR Terminal',
-          roles: ['admin'],
-          external: true,
-          icon: (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-            </svg>
-          ),
-        },
-        {
-          to: '/admin/rewards',
-          label: 'Rewards & Points',
-          roles: ['admin'],
-          icon: (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ),
-        },
         {
           to: '/admin/help-requests',
           label: 'Help Requests',
@@ -106,6 +91,21 @@ export default function Sidebar({ isOpen, onClose }) {
           icon: (
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          ),
+        },
+      ],
+    },
+    {
+      title: 'Insights',
+      items: [
+        {
+          to: '/admin/rewards',
+          label: 'Rewards & Points',
+          roles: ['admin'],
+          icon: (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ),
         },
@@ -158,21 +158,21 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Sidebar container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 glass-panel border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
           isOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full md:shadow-none'
         }`}
       >
         {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200/80 dark:border-slate-800/80">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-base shadow-sm">
               AMS
             </div>
             <div>
-              <span className="font-bold text-slate-800 tracking-tight text-base block leading-tight">
+              <span className="font-bold text-slate-800 dark:text-slate-100 tracking-tight text-base block leading-tight">
                 AttendanceMS
               </span>
-              <span className="text-[11px] font-medium text-slate-400 block">
+              <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 block">
                 Workforce Platform
               </span>
             </div>
@@ -181,7 +181,7 @@ export default function Sidebar({ isOpen, onClose }) {
           {/* Close button for mobile */}
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             aria-label="Close sidebar"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -194,7 +194,7 @@ export default function Sidebar({ isOpen, onClose }) {
         <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
           {visibleGroups.map((group) => (
             <div key={group.title} className="space-y-1">
-              <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 {group.title}
               </div>
               {group.items.map((item) =>
@@ -207,13 +207,13 @@ export default function Sidebar({ isOpen, onClose }) {
                     onClick={() => {
                       if (window.innerWidth < 768) onClose();
                     }}
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
                   >
                     <div className="flex items-center space-x-3">
                       {item.icon}
                       <span>{item.label}</span>
                     </div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                       ↗ KIOSK
                     </span>
                   </a>
@@ -225,15 +225,17 @@ export default function Sidebar({ isOpen, onClose }) {
                       if (window.innerWidth < 768) onClose();
                     }}
                     className={({ isActive }) =>
-                      `flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      `group relative flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                         isActive
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                          ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60 active:bg-slate-200/60'
                       }`
                     }
                   >
-                    {item.icon}
-                    <span>{item.label}</span>
+                    <span className="shrink-0 transition-transform duration-150 group-hover:scale-105">
+                      {item.icon}
+                    </span>
+                    <span className="truncate">{item.label}</span>
                   </NavLink>
                 )
               )}
@@ -241,20 +243,19 @@ export default function Sidebar({ isOpen, onClose }) {
           ))}
         </nav>
 
-
         {/* User Card & Logout Footer */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50/50">
+        <div className="p-4 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40">
           <div className="flex items-center space-x-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm uppercase">
+            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-sm uppercase">
               {user?.username ? user.username.charAt(0) : 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
                 {user?.username || 'User'}
               </p>
               <div className="flex items-center space-x-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {user?.role || 'Guest'}
                 </span>
               </div>
@@ -263,7 +264,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-xs font-medium text-red-600 bg-white hover:bg-red-50 hover:text-red-700 border border-red-200 rounded-lg transition-colors shadow-2xs cursor-pointer"
+            className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700 border border-red-200 dark:border-red-900/60 rounded-lg transition-colors shadow-2xs cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

@@ -304,13 +304,13 @@ export default function EmployeesPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Employees</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Employee directory and management</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Employees</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Employee directory and management</p>
         </div>
         {isAdmin && (
           <button
             onClick={openAdd}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 shadow-sm transition-colors self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 shadow-sm transition-colors self-start sm:self-auto cursor-pointer"
           >
             + Add Employee
           </button>
@@ -318,7 +318,7 @@ export default function EmployeesPage() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+      <div className="glass-card rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Search */}
           <div className="lg:col-span-2">
@@ -327,7 +327,7 @@ export default function EmployeesPage() {
               value={searchInput}
               onChange={handleSearchInput}
               placeholder="Search by name, email, ID, department..."
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 placeholder-slate-400"
+              className="w-full border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-colors"
             />
           </div>
 
@@ -335,7 +335,7 @@ export default function EmployeesPage() {
           <select
             value={department}
             onChange={handleDepartment}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
             <option value="">All Departments</option>
             <option value="Engineering">Engineering</option>
@@ -351,7 +351,7 @@ export default function EmployeesPage() {
           <select
             value={status}
             onChange={handleStatus}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -361,15 +361,15 @@ export default function EmployeesPage() {
 
         {/* Sort + result count */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {listLoading ? 'Loading...' : `${pagination.total} employee${pagination.total !== 1 ? 's' : ''} found`}
           </p>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 whitespace-nowrap">Sort by:</label>
+            <label className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">Sort by:</label>
             <select
               value={sort}
               onChange={handleSort}
-              className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 rounded-lg px-2 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             >
               {SORT_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -381,36 +381,36 @@ export default function EmployeesPage() {
 
       {/* Error Banner */}
       {listError && (
-        <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+        <div className="flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-300 rounded-xl p-4 text-sm">
           <span>&#9888;&#65039;</span>
           <div>
             <p className="font-semibold">Failed to load employees</p>
-            <p className="text-xs text-red-500 mt-0.5">{listError}</p>
+            <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">{listError}</p>
           </div>
-          <button onClick={fetchEmployees} className="ml-auto text-xs underline text-red-600 hover:text-red-800">
+          <button onClick={fetchEmployees} className="ml-auto text-xs underline text-red-600 dark:text-red-400 hover:text-red-800">
             Retry
           </button>
         </div>
       )}
 
       {/* Table Card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="glass-card rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[720px]">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Emp ID</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Name</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Mobile</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Department</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Designation</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/60">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Emp ID</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Name</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Email</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Mobile</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Department</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Designation</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
                 {isAdmin && (
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Account / Invitation</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Account / Invitation</th>
                 )}
                 {isAdmin && (
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Actions</th>
                 )}
               </tr>
             </thead>
@@ -418,10 +418,10 @@ export default function EmployeesPage() {
               {/* Loading skeletons */}
               {listLoading &&
                 [...Array(5)].map((_, i) => (
-                  <tr key={i} className="border-b border-slate-100 animate-pulse">
+                  <tr key={i} className="border-b border-slate-100 dark:border-slate-800/50 animate-pulse">
                     {[...Array(isAdmin ? 9 : 7)].map((__, j) => (
                       <td key={j} className="px-4 py-3">
-                        <div className="h-3 bg-slate-200 rounded w-3/4" />
+                        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
                       </td>
                     ))}
                   </tr>
@@ -432,14 +432,14 @@ export default function EmployeesPage() {
                 employees.map((emp) => (
                   <tr
                     key={emp.id}
-                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+                    className="border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                   >
-                    <td className="px-4 py-3 font-mono text-xs text-slate-600">{emp.employee_id}</td>
-                    <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{emp.name}</td>
-                    <td className="px-4 py-3 text-slate-600 max-w-[200px] truncate">{emp.email}</td>
-                    <td className="px-4 py-3 text-slate-500">{emp.mobile || '—'}</td>
-                    <td className="px-4 py-3 text-slate-700">{emp.department}</td>
-                    <td className="px-4 py-3 text-slate-600">{emp.designation}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-600 dark:text-slate-400">{emp.employee_id}</td>
+                    <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100 whitespace-nowrap">{emp.name}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 max-w-[200px] truncate">{emp.email}</td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{emp.mobile || '—'}</td>
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{emp.department}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{emp.designation}</td>
                     <td className="px-4 py-3"><StatusBadge status={emp.status} /></td>
                     {isAdmin && (
                       <td className="px-4 py-3 whitespace-nowrap">

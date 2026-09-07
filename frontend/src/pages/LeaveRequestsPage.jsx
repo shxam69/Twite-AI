@@ -110,19 +110,19 @@ export default function LeaveRequestsPage() {
     switch (status) {
       case 'APPROVED':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
             <span>✓ Approved</span>
           </span>
         );
       case 'REJECTED':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60">
             <span>✕ Rejected</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
             <span>Pending</span>
           </span>
@@ -132,13 +132,13 @@ export default function LeaveRequestsPage() {
 
   const getTypeBadge = (type) => {
     const colors = {
-      CASUAL: 'bg-blue-50 text-blue-700 border-blue-200',
-      SICK: 'bg-rose-50 text-rose-700 border-rose-200',
-      ANNUAL: 'bg-purple-50 text-purple-700 border-purple-200',
-      UNPAID: 'bg-slate-100 text-slate-700 border-slate-200',
+      CASUAL: 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60',
+      SICK: 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60',
+      ANNUAL: 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60',
+      UNPAID: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700',
     };
     return (
-      <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${colors[type] || colors.CASUAL}`}>
+      <span className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold border ${colors[type] || colors.CASUAL}`}>
         {type}
       </span>
     );
@@ -147,18 +147,18 @@ export default function LeaveRequestsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
               {isAdmin ? 'Leave Requests Management' : 'My Leave Requests'}
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {isAdmin ? 'Review and process employee leave applications' : 'Submit and track your leave applications'}
             </p>
           </div>
@@ -169,7 +169,7 @@ export default function LeaveRequestsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 font-medium focus:ring-2 focus:ring-blue-500"
+              className="px-3.5 py-2 border border-slate-300 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-blue-500 transition-colors"
             >
               <option value="">All Statuses</option>
               <option value="PENDING">Pending Only</option>
@@ -188,7 +188,7 @@ export default function LeaveRequestsPage() {
 
           <button
             onClick={fetchRequests}
-            className="p-2 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+            className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
             title="Refresh List"
           >
             &#8635;
@@ -197,17 +197,17 @@ export default function LeaveRequestsPage() {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl font-medium">
+        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-300 text-xs rounded-xl font-medium">
           {error}
         </div>
       )}
 
       {/* Main Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="glass-card rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead>
-              <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50/70 dark:bg-slate-850/60">
                 {isAdmin && <th className="py-3.5 px-5">Employee</th>}
                 <th className="py-3.5 px-5">Leave Type</th>
                 <th className="py-3.5 px-5">Dates (From - To)</th>
@@ -217,7 +217,7 @@ export default function LeaveRequestsPage() {
                 {isAdmin && <th className="py-3.5 px-5 text-right">Actions</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 [...Array(4)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
@@ -232,26 +232,26 @@ export default function LeaveRequestsPage() {
                 ))
               ) : requests.length > 0 ? (
                 requests.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                     {isAdmin && (
                       <td className="py-4 px-5">
-                        <div className="font-semibold text-slate-800">{item.employee_name}</div>
-                        <div className="text-xs text-slate-400">
+                        <div className="font-semibold text-slate-800 dark:text-slate-100">{item.employee_name}</div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500">
                           {item.employee_code} &bull; {item.department || 'General'}
                         </div>
                       </td>
                     )}
                     <td className="py-4 px-5">{getTypeBadge(item.leave_type)}</td>
-                    <td className="py-4 px-5 whitespace-nowrap text-xs font-medium text-slate-700">
-                      {item.start_date} <span className="text-slate-400 font-normal">to</span> {item.end_date}
+                    <td className="py-4 px-5 whitespace-nowrap text-xs font-medium text-slate-700 dark:text-slate-300">
+                      {item.start_date} <span className="text-slate-400 dark:text-slate-500 font-normal">to</span> {item.end_date}
                     </td>
-                    <td className="py-4 px-5 max-w-xs text-slate-700 text-xs">{item.reason}</td>
+                    <td className="py-4 px-5 max-w-xs text-slate-700 dark:text-slate-300 text-xs">{item.reason}</td>
                     <td className="py-4 px-5 whitespace-nowrap">{getStatusBadge(item.status)}</td>
-                    <td className="py-4 px-5 max-w-xs text-xs text-slate-500">
+                    <td className="py-4 px-5 max-w-xs text-xs text-slate-500 dark:text-slate-400">
                       {item.admin_comment ? (
                         <span>{item.admin_comment}</span>
                       ) : (
-                        <span className="text-slate-300 italic">No comment</span>
+                        <span className="text-slate-300 dark:text-slate-600 italic">No comment</span>
                       )}
                     </td>
                     {isAdmin && (
@@ -272,7 +272,7 @@ export default function LeaveRequestsPage() {
                             </button>
                           </>
                         ) : (
-                          <span className="text-xs text-slate-400 italic">
+                          <span className="text-xs text-slate-400 dark:text-slate-500 italic">
                             Reviewed by {item.reviewer_name || 'Admin'}
                           </span>
                         )}
@@ -282,7 +282,7 @@ export default function LeaveRequestsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={isAdmin ? 7 : 5} className="py-12 text-center text-slate-400 text-sm">
+                  <td colSpan={isAdmin ? 7 : 5} className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
                     No leave requests found.
                   </td>
                 </tr>
@@ -295,38 +295,38 @@ export default function LeaveRequestsPage() {
       {/* Employee Apply Leave Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-800">Apply for Leave</h3>
+          <div className="glass-modal rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200/80 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Apply for Leave</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 bg-red-50 text-red-700 border border-red-200 text-xs rounded-xl font-medium">
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/60 text-xs rounded-xl font-medium">
                 {formError}
               </div>
             )}
 
             {successMsg && (
-              <div className="p-3 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs rounded-xl font-medium">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs rounded-xl font-medium">
                 {successMsg}
               </div>
             )}
 
             <form onSubmit={handleSubmitLeave} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Leave Type
                 </label>
                 <select
                   value={leaveType}
                   onChange={(e) => setLeaveType(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2 border border-slate-300 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 transition-colors"
                 >
                   <option value="CASUAL">Casual Leave</option>
                   <option value="SICK">Sick Leave</option>
@@ -337,7 +337,7 @@ export default function LeaveRequestsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                     Start Date
                   </label>
                   <input
@@ -345,12 +345,12 @@ export default function LeaveRequestsPage() {
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                     End Date
                   </label>
                   <input
@@ -358,7 +358,7 @@ export default function LeaveRequestsPage() {
                     required
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>

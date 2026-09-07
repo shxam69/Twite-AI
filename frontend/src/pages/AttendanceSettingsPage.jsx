@@ -171,20 +171,20 @@ export default function AttendanceSettingsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="glass-panel flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/90 dark:bg-slate-900/80 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
               Attendance & Security Settings
             </h1>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Configure workplace geofencing, QR rotation policies, and attendance business rules.
           </p>
         </div>
@@ -210,37 +210,37 @@ export default function AttendanceSettingsPage() {
         <div
           className={`p-4 rounded-xl border flex items-center justify-between text-sm ${
             message.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-red-50 text-red-800 border-red-200'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800'
+              : 'bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800'
           }`}
         >
           <div className="flex items-center space-x-2.5">
             {message.type === 'success' ? (
-              <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             ) : (
-              <svg className="w-5 h-5 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             )}
             <span>{message.text}</span>
           </div>
-          <button onClick={() => setMessage(null)} className="text-slate-400 hover:text-slate-600 font-bold ml-4">
+          <button onClick={() => setMessage(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold ml-4 cursor-pointer">
             &times;
           </button>
         </div>
       )}
 
       {/* Group 1: Workplace GPS Geofencing */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 gap-2">
+      <div className="glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 dark:border-slate-800 gap-2">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 flex items-center space-x-2">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
               <span>Workplace GPS Geofence</span>
-              <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-md">Authoritative</span>
+              <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded-md">Authoritative</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Set the exact office coordinates and allowed radius in meters. Check-ins outside this radius are rejected.
             </p>
           </div>
@@ -248,7 +248,7 @@ export default function AttendanceSettingsPage() {
           <button
             onClick={handleGetCurrentLocation}
             disabled={locating}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg transition-colors cursor-pointer shrink-0"
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs rounded-lg transition-colors cursor-pointer shrink-0"
           >
             <svg className={`w-3.5 h-3.5 ${locating ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -260,7 +260,7 @@ export default function AttendanceSettingsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Workplace Latitude
             </label>
             <div className="flex space-x-2">
@@ -269,12 +269,12 @@ export default function AttendanceSettingsPage() {
                 placeholder="e.g. 28.613939"
                 value={policies.workplace_latitude || ''}
                 onChange={(e) => handleChange('workplace_latitude', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <button
                 onClick={() => handleSaveSingle('workplace_latitude')}
                 disabled={savingKey === 'workplace_latitude'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -282,7 +282,7 @@ export default function AttendanceSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Workplace Longitude
             </label>
             <div className="flex space-x-2">
@@ -291,12 +291,12 @@ export default function AttendanceSettingsPage() {
                 placeholder="e.g. 77.209021"
                 value={policies.workplace_longitude || ''}
                 onChange={(e) => handleChange('workplace_longitude', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <button
                 onClick={() => handleSaveSingle('workplace_longitude')}
                 disabled={savingKey === 'workplace_longitude'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -304,7 +304,7 @@ export default function AttendanceSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Allowed Radius (Meters)
             </label>
             <div className="flex space-x-2">
@@ -314,12 +314,12 @@ export default function AttendanceSettingsPage() {
                 placeholder="100"
                 value={policies.workplace_radius_meters || '100'}
                 onChange={(e) => handleChange('workplace_radius_meters', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <button
                 onClick={() => handleSaveSingle('workplace_radius_meters')}
                 disabled={savingKey === 'workplace_radius_meters'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -329,17 +329,17 @@ export default function AttendanceSettingsPage() {
       </div>
 
       {/* Group 2: Dynamic QR Security */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-        <div className="pb-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Dynamic Rotating QR Security</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+      <div className="glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 shadow-xs space-y-4">
+        <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Dynamic Rotating QR Security</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Configure how frequently office QR challenges automatically expire and rotate.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               QR Validity Duration (Seconds)
             </label>
             <div className="flex space-x-2">
@@ -349,33 +349,33 @@ export default function AttendanceSettingsPage() {
                 max="600"
                 value={policies.qr_validity_seconds || '30'}
                 onChange={(e) => handleChange('qr_validity_seconds', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <button
                 onClick={() => handleSaveSingle('qr_validity_seconds')}
                 disabled={savingKey === 'qr_validity_seconds'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Default: 30 seconds. Minimum allowed: 5 seconds.</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-1">Default: 30 seconds. Minimum allowed: 5 seconds.</p>
           </div>
         </div>
       </div>
 
       {/* Group 3: Office Attendance Business Rules */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-        <div className="pb-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Office Attendance Business Rules</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+      <div className="glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 shadow-xs space-y-4">
+        <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Office Attendance Business Rules</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Configure working hours, office start time, and grace period rules.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Office Start Time (HH:MM:SS)
             </label>
             <div className="flex space-x-2">
@@ -384,12 +384,12 @@ export default function AttendanceSettingsPage() {
                 placeholder="09:00:00"
                 value={policies.office_start_time || '09:00:00'}
                 onChange={(e) => handleChange('office_start_time', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
               />
               <button
                 onClick={() => handleSaveSingle('office_start_time')}
                 disabled={savingKey === 'office_start_time'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -397,7 +397,7 @@ export default function AttendanceSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Grace Period (Minutes)
             </label>
             <div className="flex space-x-2">
@@ -406,12 +406,12 @@ export default function AttendanceSettingsPage() {
                 min="0"
                 value={policies.grace_period_minutes || '15'}
                 onChange={(e) => handleChange('grace_period_minutes', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <button
                 onClick={() => handleSaveSingle('grace_period_minutes')}
                 disabled={savingKey === 'grace_period_minutes'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -419,7 +419,7 @@ export default function AttendanceSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Min Working Hours (Checkout)
             </label>
             <div className="flex space-x-2">
@@ -428,12 +428,12 @@ export default function AttendanceSettingsPage() {
                 min="0"
                 value={policies.minimum_checkout_hours || '4'}
                 onChange={(e) => handleChange('minimum_checkout_hours', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <button
                 onClick={() => handleSaveSingle('minimum_checkout_hours')}
                 disabled={savingKey === 'minimum_checkout_hours'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -443,24 +443,24 @@ export default function AttendanceSettingsPage() {
       </div>
 
       {/* Group 4: Temporary Exit & Automation Policies */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-        <div className="pb-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Temporary Exit & EOD Automation</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+      <div className="glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 shadow-xs space-y-4">
+        <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Temporary Exit & EOD Automation</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Configure system automation features and exit allowances.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Temporary Exit Allowed
             </label>
             <div className="flex space-x-2">
               <select
                 value={policies.temporary_exit_enabled || 'true'}
                 onChange={(e) => handleChange('temporary_exit_enabled', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
               >
                 <option value="true">Enabled (True)</option>
                 <option value="false">Disabled (False)</option>
@@ -468,7 +468,7 @@ export default function AttendanceSettingsPage() {
               <button
                 onClick={() => handleSaveSingle('temporary_exit_enabled')}
                 disabled={savingKey === 'temporary_exit_enabled'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -476,7 +476,7 @@ export default function AttendanceSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Monthly Exit Allowance
             </label>
             <div className="flex space-x-2">
@@ -485,12 +485,12 @@ export default function AttendanceSettingsPage() {
                 min="0"
                 value={policies.monthly_exit_allowance || '2'}
                 onChange={(e) => handleChange('monthly_exit_allowance', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <button
                 onClick={() => handleSaveSingle('monthly_exit_allowance')}
                 disabled={savingKey === 'monthly_exit_allowance'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -498,14 +498,14 @@ export default function AttendanceSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Auto EOD Checkout
             </label>
             <div className="flex space-x-2">
               <select
                 value={policies.auto_checkout_enabled || 'false'}
                 onChange={(e) => handleChange('auto_checkout_enabled', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
               >
                 <option value="false">Disabled (False)</option>
                 <option value="true">Enabled (True)</option>
@@ -513,7 +513,7 @@ export default function AttendanceSettingsPage() {
               <button
                 onClick={() => handleSaveSingle('auto_checkout_enabled')}
                 disabled={savingKey === 'auto_checkout_enabled'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
@@ -523,20 +523,20 @@ export default function AttendanceSettingsPage() {
       </div>
 
       {/* Group 5: Extra Hours & Reward System Policies */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-        <div className="pb-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center space-x-2">
+      <div className="glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 shadow-xs space-y-4">
+        <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
             <span>Extra Hours Reward System Policies</span>
-            <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800 rounded-md">Reward Policy</span>
+            <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-md">Reward Policy</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Set standard shift hours and points multiplier per extra hour worked beyond standard duration. Manage full catalog and redemptions in the dedicated Rewards page.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Standard Shift Hours (Daily)
             </label>
             <div className="flex space-x-2">
@@ -547,21 +547,21 @@ export default function AttendanceSettingsPage() {
                 placeholder="8"
                 value={policies.standard_work_hours || '8'}
                 onChange={(e) => handleChange('standard_work_hours', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
               />
               <button
                 onClick={() => handleSaveSingle('standard_work_hours')}
                 disabled={savingKey === 'standard_work_hours'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg cursor-pointer"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Hours worked past this value earn extra hours points.</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-1">Hours worked past this value earn extra hours points.</p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
               Points Per Extra Hour
             </label>
             <div className="flex space-x-2">
@@ -571,17 +571,17 @@ export default function AttendanceSettingsPage() {
                 placeholder="100"
                 value={policies.reward_points_per_extra_hour || '100'}
                 onChange={(e) => handleChange('reward_points_per_extra_hour', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
               />
               <button
                 onClick={() => handleSaveSingle('reward_points_per_extra_hour')}
                 disabled={savingKey === 'reward_points_per_extra_hour'}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg cursor-pointer"
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Save
               </button>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Points automatically awarded to employee wallet on QR check-out.</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-1">Points automatically awarded to employee wallet on QR check-out.</p>
           </div>
         </div>
       </div>

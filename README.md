@@ -1,7 +1,7 @@
 # AttendanceMS
 
 > **Workforce Attendance Platform**  
-> A secure, enterprise-grade workforce attendance and compliance management platform featuring dynamic rotating QR verification, workplace GPS geofencing, WebAuthn platform passkeys, administrative overrides, leave management, attendance corrections, automated extra-hour rewards, real-time presence tracking, immutable audit logging, and a dedicated standalone kiosk terminal.
+> A secure, enterprise-grade workforce attendance and compliance management platform featuring dynamic rotating QR verification, workplace GPS geofencing, optional device-based fingerprint verification, administrative overrides, leave management, attendance corrections, automated extra-hour rewards, real-time presence tracking, immutable audit logging, and a dedicated standalone kiosk terminal.
 
 ---
 
@@ -38,14 +38,14 @@
 
 ## Overview
 
-**AttendanceMS** is a full-stack workforce attendance platform designed to eliminate buddy punching, proxy check-ins, and manual attendance tracking errors. It replaces legacy biometric hardware and paper registers with cryptographic QR tokens, client-side GPS geofencing verified strictly by the backend, optional device-bound WebAuthn biometrics, and a complete administrative oversight portal.
+**AttendanceMS** is a full-stack workforce attendance platform designed to eliminate buddy punching, proxy check-ins, and manual attendance tracking errors. It replaces legacy biometric hardware and paper registers with cryptographic QR tokens, client-side GPS geofencing verified strictly by the backend, optional device-level fingerprint / biometric verification, and a complete administrative oversight portal.
 
 ### Key Capabilities
 - **Administrative Workforce Management**: Comprehensive employee lifecycle management, operational attendance policy tuning, audit trails, and attendance adjustments.
 - **Employee Self-Service**: One-click check-in/out via mobile QR scanner, leave requests, attendance correction requests, and real-time personal attendance analytics.
 - **Dynamic Rotating QR Attendance**: High-contrast, rotating cryptographic QR challenges that prevent token replay and screen captures.
 - **Server-Authoritative Geofencing**: Workplace GPS distance verification calculated via the Haversine formula on the server.
-- **WebAuthn Platform Biometrics**: Zero-biometric storage passkey verification leveraging device-native authenticators (Touch ID, Face ID, Windows Hello, Android Biometrics).
+- **Optional Fingerprint / Biometric Verification**: Optional device-level verification (e.g. fingerprint, Windows Hello, Touch ID) where supported by the employee's device and browser; zero raw biometric data is ever accessed, uploaded, or stored by the application.
 - **Gamified Rewards & Points**: Automated reward points for overtime/extra hours worked, an employee points wallet, and a redeemable company rewards catalog.
 - **Dedicated Standalone Kiosk**: A full-bleed, borderless display terminal (`/qr-display`) with live employee scan confirmation and automatic return-to-standby.
 
@@ -58,7 +58,7 @@ This section directly maps all official submission deliverables to the actual fi
 ### Mandatory
 
 #### 1. GitHub Repository
-- **Deliverable**: Complete, clean source code repository containing both frontend, backend, database schema, test scripts, and deployment configuration.
+- **Deliverable**: Complete, clean source code repository containing frontend, backend, database schema, test scripts, and deployment configuration.
 - **Repository URL**: [https://github.com/shxam69/Twite-AI.git](https://github.com/shxam69/Twite-AI.git)
 - **Branch**: `main`
 
@@ -87,11 +87,11 @@ This section directly maps all official submission deliverables to the actual fi
   1. **Login Page**: Administrator and employee authentication with validation feedback.
   2. **Admin Dashboard**: Executive KPI metrics, today's attendance summary, and department breakdown charts.
   3. **Employee Management**: Employee directory, search/filtering, add employee modal, edit, and inactivation.
-  4. **Daily Attendance Overview**: Records table with verification badges (`[QR]`, `[QR + Passkey]`, `[ADMIN]`).
+  4. **Daily Attendance Overview**: Records table with verification badges (`[QR]`, `[QR + Optional Biometric]`, `[ADMIN]`).
   5. **Admin Manual Attendance**: Administrative override modal with mandatory justification reason.
   6. **Standalone QR Terminal**: Full-bleed kiosk UI at `/qr-display` showing active rotating SVG QR code.
   7. **Employee Mobile Attendance**: Responsive mobile scanner capturing QR and requesting GPS.
-  8. **GPS & WebAuthn Verification**: Geofence radius check and device platform passkey assertion dialog.
+  8. **GPS & Optional Fingerprint Verification**: Geofence radius check and optional device biometric prompt where supported.
   9. **Rewards & Points Portal**: `/admin/rewards` KPI cards, 7-day points trend, catalog manager, and redemptions.
   10. **Leave Requests**: Employee submission form and admin approve/reject review workflow.
   11. **Attendance Correction Requests**: Employee adjustment request and admin review modal.
@@ -233,12 +233,14 @@ Architectural enhancements built beyond the baseline specification:
 - **No Spoofing**: The client's self-reported `location_verified` flag is ignored; distance is calculated and verified server-side.
 - **Zero Background Tracking**: Geolocation is requested strictly on-demand at the moment of scan; no persistent background GPS tracking is performed.
 
-#### 3. WebAuthn Platform Authenticator / Passkeys
-- **Device-Native Biometrics**: Integrates with the browser's WebAuthn API to support Windows Hello, Touch ID, Face ID, Android Biometrics, and hardware security keys.
-- **Zero Biometric Data Storage**: AttendanceMS never receives, handles, or stores fingerprints, face meshes, or biometric templates. Only standard public key credential metadata is persisted.
-- **Strict Verification Fallback**:
-  - *If a platform authenticator is unavailable on the device*: WebAuthn is skipped gracefully (`WEBAUTHN_UNAVAILABLE`), and QR + GPS attendance succeeds with `verification_method = 'QR'`.
-  - *If an authenticator exists but the user cancels or fails*: Check-in is blocked immediately (`WEBAUTHN_CANCELLED` / `WEBAUTHN_FAILED`). Security cannot be bypassed by canceling the dialog.
+#### 3. Optional Fingerprint Verification (WebAuthn)
+AttendanceMS supports optional device-based biometric verification where supported by the employee's device and browser. Fingerprint authentication can provide an additional verification layer during attendance.
+
+- **Fingerprint verification is NOT mandatory**: The core, authoritative employee attendance flow remains **QR scanning combined with GPS/geofencing verification**.
+- **Supported Device Fallback**: If a device does not support a suitable biometric authenticator, or if biometric verification is not configured, the employee can continue using the normal QR + GPS attendance flow without restriction.
+- **Zero Biometric Data Handled**: AttendanceMS **never accesses, captures, uploads, or stores raw fingerprint or biometric data**. Any supported device-level biometric verification is handled strictly by the operating system/browser security layer via the standard WebAuthn API; only cryptographic public-key assertion metadata is verified.
+- **Device Incompatibility Resilience**: Employees without fingerprint or biometric capabilities are never blocked from completing attendance; standard QR + GPS verification fulfills all requirements.
+- **Security Distinction**: Biometrics are completely optional; however, if an enrolled employee explicitly chooses to authenticate with their biometric prompt and actively cancels or fails the prompt, the operation is blocked to prevent bypass of an in-progress verification attempt.
 
 #### 4. Admin Manual Attendance Override
 - **Administrative Override (`/admin/attendance`)**: An authorized capability for admins to mark or update attendance when an employee forgets their phone, experiences device failure, or requires manual adjustment.
@@ -309,7 +311,7 @@ graph TD
     subgraph Hardware & Browser APIs
         D[Device Camera / html5-qrcode]
         E[Browser Geolocation API]
-        F[WebAuthn Platform Authenticator]
+        F[Optional Device Biometrics / WebAuthn]
     end
 
     subgraph Frontend - React 19 + Vite 8
@@ -323,7 +325,7 @@ graph TD
         K[Employee Controller & Service]
         L[Attendance & QR Engine]
         M[Haversine GPS Validator]
-        N[WebAuthn Assertion Verifier]
+        N[Optional Biometric Verifier]
         O[Rewards & Wallet Service]
         P[Leave & Correction Handlers]
         Q[Audit Logger & Event Bus]
@@ -394,8 +396,8 @@ sequenceDiagram
     UI->>HW: Request Geolocation (lat, lng)
     HW-->>UI: Return Coordinates
 
-    opt Platform Authenticator Available
-        UI->>HW: navigator.credentials.get()
+    opt Optional Fingerprint / Biometric Available
+        UI->>HW: navigator.credentials.get() (Optional)
         HW-->>UI: Biometric Assertion Signature
     end
 
@@ -510,8 +512,8 @@ sequenceDiagram
 | **Anti-Replay QR** | Ephemeral UUIDs, 30-second expiry, and unique constraint on `(challenge_id, employee_id)`. | Replayed tokens, QR photo sharing, duplicate punches. |
 | **Cryptographic QR Hashing** | SHA-256 token hashing; plaintext tokens never persisted in database tables. | Internal token theft from database backups. |
 | **Server-Side GPS** | Server evaluates Haversine distance against workplace coordinates; ignores client claims. | Mock GPS location spoofers, modified client apps. |
-| **Biometric Privacy** | Standard WebAuthn public-key authentication; zero biometric templates stored. | Biometric privacy violations, database credential compromise. |
-| **Strict WebAuthn Fallback** | Canceling or failing authenticator explicitly blocks attendance; cannot bypass dialog. | Forced biometric bypass attacks. |
+| **Biometric Privacy (Optional)** | Optional device biometric verification; zero raw fingerprint or biometric templates stored. Handled via browser/OS WebAuthn layer. | Biometric privacy violations, credential compromise. |
+| **Optional Biometric Resilience** | Unenrolled/unsupported devices cleanly use standard QR + GPS flow; failed in-progress biometric attempts cannot be bypassed. | Device incompatibility lockouts, verification bypass attacks. |
 | **Audit Sanitization** | `attendance_events` JSON metadata scrubbed of tokens, passwords, and secrets. | Audit log credential leakage. |
 | **Integrity Constraints** | Foreign keys with `ON DELETE CASCADE / SET NULL` and unique constraints. | Orphan records, duplicate-date attendance records. |
 
@@ -577,7 +579,7 @@ The database consists of **16 production base tables**:
 - **Primary Key**: `id` (`INT AUTO_INCREMENT`)
 - **Foreign Keys**: `employee_id` $\rightarrow$ `employees(id) ON DELETE CASCADE`
 - **Unique Constraint**: `uk_employee_attendance_date` on `(employee_id, attendance_date)`
-- **Key Columns**: `attendance_date` (`DATE`), `check_in` (`TIME`), `check_out` (`TIME`), `status` (`ENUM('present', 'absent', 'late', 'half_day')`), `verification_method` (`ENUM('MANUAL', 'QR', 'WEBAUTHN', 'QR_WEBAUTHN', 'AUTO_LOCATION', 'ADMIN')`), `remarks` (`TEXT`).
+- **Key Columns**: `attendance_date` (`DATE`), `check_in` (`TIME`), `check_out` (`TIME`), `status` (`ENUM('present', 'absent', 'late', 'half_day')`), `verification_method` (`ENUM('MANUAL', 'QR', 'WEBAUTHN', 'QR_WEBAUTHN', 'AUTO_LOCATION', 'ADMIN')` where `'QR'` represents the core mandatory QR+GPS flow and `'QR_WEBAUTHN'` represents attendance with optional fingerprint/biometric verification), `remarks` (`TEXT`).
 
 #### 4. `employee_invitations`
 - **Purpose**: Tracks single-use cryptographic invitation tokens for employee self-registration.
@@ -650,7 +652,7 @@ The database consists of **16 production base tables**:
 - **Key Columns**: `points_spent`, `status` (`ENUM('PENDING', 'APPROVED', 'FULFILLED', 'CANCELLED')`).
 
 #### 16. `webauthn_credentials`
-- **Purpose**: Registered WebAuthn platform public keys for device passkey authentication.
+- **Purpose**: Registered WebAuthn platform public keys for optional device biometric / passkey authentication.
 - **Primary Key**: `id` (`INT AUTO_INCREMENT`)
 - **Foreign Keys**: `employee_id` $\rightarrow$ `employees(id) ON DELETE CASCADE`
 - **Key Columns**: `credential_id` (`VARCHAR(500) UNIQUE`), `public_key` (`TEXT`), `counter` (`BIGINT`), `device_type`, `transports`.
@@ -711,15 +713,16 @@ http://localhost:5000/api/docs
 | `POST` | `/api/attendance/qr/check-in` | Authenticated | Submit QR token + GPS coordinates for check-in. |
 | `POST` | `/api/attendance/qr/check-out` | Authenticated | Submit QR token + GPS coordinates for check-out. |
 
-#### WebAuthn Passkeys (`/api/auth/webauthn`)
+#### Optional Fingerprint / WebAuthn APIs (`/api/auth/webauthn`)
+*Note: Fingerprint verification is an OPTIONAL additional layer. The core mandatory employee attendance verification flow remains QR + GPS.*
 | Method | Endpoint | Authorization | Purpose |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/auth/webauthn/register/options`| Authenticated | Generate WebAuthn passkey registration challenge. |
+| `GET` | `/api/auth/webauthn/register/options`| Authenticated | Generate optional WebAuthn passkey registration challenge. |
 | `POST` | `/api/auth/webauthn/register/verify` | Authenticated | Verify device attestation & save public key credential. |
-| `GET` | `/api/auth/webauthn/auth/options` | Authenticated | Generate WebAuthn assertion authentication challenge. |
+| `GET` | `/api/auth/webauthn/auth/options` | Authenticated | Generate optional WebAuthn assertion authentication challenge. |
 | `POST` | `/api/auth/webauthn/authenticate/verify`| Authenticated | Verify device biometric signature proof. |
 | `GET` | `/api/auth/webauthn/credentials` | Authenticated | List enrolled device authenticators for employee. |
-| `DELETE`| `/api/auth/webauthn/credentials/:id`| Authenticated | Revoke a registered platform authenticator. |
+| `DELETE`| `/api/auth/webauthn/credentials/:id`| Authenticated | Revoke an enrolled platform authenticator. |
 | `POST` | `/api/auth/webauthn/status` | Authenticated | Log client WebAuthn availability/skip audit event. |
 
 #### Rewards & Points (`/api/rewards`)
@@ -767,7 +770,7 @@ http://localhost:5000/api/docs
 - **npm**: `v9.0.0` or higher
 - **MySQL Server**: `8.0+` (local instance or cloud MySQL URI e.g. Aiven)
 - **Git**: Installed and available in PATH
-- **Web Browser**: Modern browser (Chrome, Edge, Safari, Firefox) with WebRTC camera and WebAuthn platform support
+- **Web Browser**: Modern browser (Chrome, Edge, Safari, Firefox) with WebRTC camera and optional WebAuthn platform support (for optional fingerprint verification)
 
 ---
 
@@ -925,11 +928,11 @@ The repository includes a production-ready `render.yaml` blueprint configured fo
 
 ## Automated Test Suites
 
-The backend test suite verifies RBAC, cryptographic security, geofencing, rewards, and WebAuthn. All tests can be executed directly from the `backend/` directory:
+The backend test suite verifies RBAC, cryptographic security, geofencing, rewards, and optional WebAuthn. All tests can be executed directly from the `backend/` directory:
 
 | Test Script | Scope & Assertions | Command |
 | :--- | :--- | :--- |
-| **`testFinalBuild.js`** | Comprehensive verification: WebAuthn zero biometrics, rewards stats, daily points history, 16 tables. | `node src/scripts/testFinalBuild.js` |
+| **`testFinalBuild.js`** | Comprehensive verification: Optional WebAuthn zero biometrics, rewards stats, daily points history, 16 tables. | `node src/scripts/testFinalBuild.js` |
 | **`testAdminManualAttendance.js`** | RBAC enforcement, administrative override creation, mandatory reason validation, audit trail, duplicate prevention. | `node src/scripts/testAdminManualAttendance.js` |
 | **`testQrTerminalUx.js`** | QR challenge status endpoint, scan detection, failed-scan resilience, auto-standby reset. | `node src/scripts/testQrTerminalUx.js` |
 | **`testPhase8c.js`** | 36 tests: Rotating QR tokens, SHA-256 hashing, anti-replay, Haversine GPS geofence enforcement, help requests. | `node src/scripts/testPhase8c.js` |

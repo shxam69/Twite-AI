@@ -21,12 +21,11 @@ async function createEmployee(req, res, next) {
       status,
     } = req.body;
 
-    // Validate required fields
+    // Validate required fields (mobile is optional)
     const missing = [];
     if (!employee_id || !employee_id.trim()) missing.push('employee_id');
     if (!name || !name.trim()) missing.push('name');
     if (!email || !email.trim()) missing.push('email');
-    if (!mobile || !mobile.trim()) missing.push('mobile');
     if (!department || !department.trim()) missing.push('department');
     if (!designation || !designation.trim()) missing.push('designation');
 
@@ -45,6 +44,20 @@ async function createEmployee(req, res, next) {
       });
     }
 
+    // Validate mobile format if provided (optional field - requires exactly 10 digits)
+    let sanitizedMobile = null;
+    if (mobile !== undefined && mobile !== null && typeof mobile === 'string' && mobile.trim() !== '') {
+      const trimmedMobile = mobile.trim();
+      const PHONE_REGEX = /^[0-9]{10}$/;
+      if (!PHONE_REGEX.test(trimmedMobile)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mobile number must be exactly 10 digits.',
+        });
+      }
+      sanitizedMobile = trimmedMobile;
+    }
+
     // Validate status if provided
     if (status && !VALID_STATUSES.includes(status.trim().toLowerCase())) {
       return res.status(400).json({
@@ -57,7 +70,7 @@ async function createEmployee(req, res, next) {
       employee_id,
       name,
       email,
-      mobile,
+      mobile: sanitizedMobile,
       department,
       designation,
       status: status ? status.trim().toLowerCase() : 'active',
@@ -174,7 +187,7 @@ async function updateEmployee(req, res, next) {
       });
     }
 
-    const { email, status } = req.body;
+    const { email, mobile, status } = req.body;
 
     // Validate email format if updating email
     if (email !== undefined && !EMAIL_REGEX.test(email.trim())) {
@@ -182,6 +195,17 @@ async function updateEmployee(req, res, next) {
         success: false,
         message: 'Invalid email format.',
       });
+    }
+
+    // Validate mobile format if updating mobile (optional, allowed to be cleared/null, requires exactly 10 digits if provided)
+    if (mobile !== undefined && mobile !== null && typeof mobile === 'string' && mobile.trim() !== '') {
+      const PHONE_REGEX = /^[0-9]{10}$/;
+      if (!PHONE_REGEX.test(mobile.trim())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mobile number must be exactly 10 digits.',
+        });
+      }
     }
 
     // Validate status if updating status

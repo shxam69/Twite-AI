@@ -50,19 +50,19 @@ export default function AdminQrPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 glass-panel bg-white/80 dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
               Dynamic QR Code Generator
             </h1>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Display this active QR code on the office screen for employee attendance check-in.
           </p>
         </div>
@@ -80,23 +80,23 @@ export default function AdminQrPage() {
       </div>
 
       {/* Main Display Area */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center flex flex-col items-center justify-center">
+      <div className="glass-panel bg-white/80 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-8 shadow-sm text-center flex flex-col items-center justify-center">
         {loading && !qrData ? (
           <div className="py-16 space-y-4">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-sm text-slate-500 font-medium">Generating cryptographic QR challenge...</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Generating cryptographic QR challenge...</p>
           </div>
         ) : error ? (
           <div className="py-12 space-y-4 max-w-md">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <p className="text-base font-semibold text-slate-800">{error}</p>
+            <p className="text-base font-semibold text-slate-800 dark:text-slate-100">{error}</p>
             <button
               onClick={fetchNextQr}
-              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+              className="px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
             >
               Try Again
             </button>
@@ -104,22 +104,22 @@ export default function AdminQrPage() {
         ) : qrData ? (
           <div className="space-y-6 max-w-md w-full">
             {/* Status Badge & Timer */}
-            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80">
               <div className="flex items-center space-x-2">
                 <span className={`w-3 h-3 rounded-full ${timeLeft > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-700">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   {timeLeft > 0 ? 'Active QR' : 'Expired'}
                 </span>
               </div>
 
               <div className="text-right">
-                <span className="text-xs text-slate-500 font-medium block">Expires in</span>
-                <span className="text-lg font-bold font-mono text-slate-900">{timeLeft}s</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">Expires in</span>
+                <span className="text-lg font-bold font-mono text-slate-900 dark:text-slate-100">{timeLeft}s</span>
               </div>
             </div>
 
             {/* Visual Progress Bar */}
-            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
               <div
                 className={`h-2 transition-all duration-1000 ease-linear rounded-full ${
                   progressPercent > 30 ? 'bg-blue-600' : 'bg-amber-500'
@@ -128,8 +128,8 @@ export default function AdminQrPage() {
               ></div>
             </div>
 
-            {/* QR Code Container */}
-            <div className="bg-white p-6 rounded-2xl border-2 border-dashed border-slate-300 inline-block shadow-md my-4">
+            {/* QR Code Container (Always crisp white background for optical scanning) */}
+            <div className="bg-white p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 inline-block shadow-md my-4">
               <QRCodeSVG
                 value={qrData.token}
                 size={260}
@@ -141,18 +141,18 @@ export default function AdminQrPage() {
             </div>
 
             {/* Info cards */}
-            <div className="text-xs text-slate-500 space-y-1 bg-blue-50/50 p-4 rounded-xl border border-blue-100 text-left">
+            <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/40 text-left">
               <div className="flex justify-between">
-                <span className="font-medium text-slate-600">Challenge ID:</span>
-                <span className="font-mono text-slate-800 truncate max-w-[200px]">{qrData.challenge_id}</span>
+                <span className="font-medium text-slate-600 dark:text-slate-300">Challenge ID:</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200 truncate max-w-[200px]">{qrData.challenge_id}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium text-slate-600">Rotation Policy:</span>
-                <span className="text-slate-800 font-semibold">{qrData.validity_seconds} Seconds</span>
+                <span className="font-medium text-slate-600 dark:text-slate-300">Rotation Policy:</span>
+                <span className="text-slate-800 dark:text-slate-200 font-semibold">{qrData.validity_seconds} Seconds</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium text-slate-600">Geofence Verified:</span>
-                <span className="text-emerald-700 font-semibold">Active</span>
+                <span className="font-medium text-slate-600 dark:text-slate-300">Geofence Verified:</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Active</span>
               </div>
             </div>
           </div>

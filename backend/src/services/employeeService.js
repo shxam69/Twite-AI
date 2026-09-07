@@ -52,6 +52,8 @@ async function createEmployee(data) {
     throw error;
   }
 
+  const sanitizedMobile = mobile && typeof mobile === 'string' && mobile.trim() ? mobile.trim() : null;
+
   const [result] = await pool.query(
     `INSERT INTO employees 
       (employee_id, name, email, mobile, department, designation, status) 
@@ -60,7 +62,7 @@ async function createEmployee(data) {
       employee_id.trim(),
       name.trim(),
       email.trim().toLowerCase(),
-      mobile.trim(),
+      sanitizedMobile,
       department.trim(),
       designation.trim(),
       status,
@@ -239,6 +241,11 @@ async function updateEmployee(id, data) {
       let val = data[field];
       if (typeof val === 'string') {
         val = field === 'email' ? val.trim().toLowerCase() : val.trim();
+        if (field === 'mobile' && !val) {
+          val = null;
+        }
+      } else if (field === 'mobile' && val === null) {
+        val = null;
       }
       params.push(val);
     }

@@ -65,31 +65,31 @@ function StatusBadge({ status }) {
   switch (norm) {
     case 'present':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60">
           Present
         </span>
       );
     case 'late':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60">
           Late
         </span>
       );
     case 'half_day':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60">
           Half Day
         </span>
       );
     case 'absent':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/60">
           Absent
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
           Not Checked In
         </span>
       );
@@ -103,35 +103,35 @@ function VerificationBadge({ method }) {
   switch (norm) {
     case 'ADMIN':
       return (
-        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
+        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-700">
           <span>🛡️</span>
           <span>ADMIN</span>
         </span>
       );
     case 'QR_WEBAUTHN':
       return (
-        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
           <span>🔐</span>
           <span>QR + Passkey</span>
         </span>
       );
     case 'QR':
       return (
-        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800">
           <span>📷</span>
           <span>QR</span>
         </span>
       );
     case 'AUTO_LOCATION':
       return (
-        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-200">
+        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-200 dark:bg-cyan-950/60 dark:text-cyan-300 dark:border-cyan-800">
           <span>📍</span>
           <span>Geofence</span>
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
           <span>📝</span>
           <span>{norm}</span>
         </span>
@@ -179,26 +179,26 @@ function AttendanceCalendarView({ records, currentYear, currentMonth, onMonthCha
   return (
     <div className="space-y-4">
       {/* Calendar Header Controls */}
-      <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
+      <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
         <button
           onClick={prevMonth}
-          className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer"
+          className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
         >
           &larr; Prev Month
         </button>
-        <span className="text-base font-bold text-slate-800">
+        <span className="text-base font-bold text-slate-800 dark:text-slate-100">
           {monthNames[currentMonth]} {currentYear}
         </span>
         <button
           onClick={nextMonth}
-          className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer"
+          className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
         >
           Next Month &rarr;
         </button>
       </div>
 
       {/* Grid Header (Sun - Sat) */}
-      <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-500 uppercase tracking-wider">
+      <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
       </div>
 
@@ -206,7 +206,7 @@ function AttendanceCalendarView({ records, currentYear, currentMonth, onMonthCha
       <div className="grid grid-cols-7 gap-1.5">
         {/* Blank cells for offset */}
         {[...Array(firstDayOfWeek)].map((_, i) => (
-          <div key={`blank-${i}`} className="h-20 bg-slate-50/50 rounded-lg border border-dashed border-slate-100" />
+          <div key={`blank-${i}`} className="h-20 bg-slate-50/50 dark:bg-slate-900/30 rounded-lg border border-dashed border-slate-100 dark:border-slate-800" />
         ))}
 
         {/* Days of month */}
@@ -223,12 +223,12 @@ function AttendanceCalendarView({ records, currentYear, currentMonth, onMonthCha
               onClick={() => dayRecs.length > 0 && setSelectedDayRecords({ date: dateKey, records: dayRecs })}
               className={`h-24 p-2 rounded-lg border flex flex-col justify-between transition-all ${
                 dayRecs.length > 0
-                  ? 'bg-white border-blue-200 shadow-2xs hover:border-blue-400 hover:shadow-xs cursor-pointer'
-                  : 'bg-white/60 border-slate-100'
+                  ? 'bg-white dark:bg-slate-800/80 border-blue-200 dark:border-blue-800/60 shadow-2xs hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xs cursor-pointer'
+                  : 'bg-white/60 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800/60'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">{dayNum}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{dayNum}</span>
                 {dayRecs.length > 0 && (
                   <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                 )}
@@ -237,7 +237,7 @@ function AttendanceCalendarView({ records, currentYear, currentMonth, onMonthCha
               {dayRecs.length > 0 && (
                 <div className="space-y-1 overflow-hidden">
                   <StatusBadge status={dayRecs[0].status} />
-                  <span className="text-[10px] text-slate-400 block truncate">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block truncate">
                     {dayRecs[0].employee_name || dayRecs[0].check_in}
                   </span>
                 </div>
@@ -249,15 +249,15 @@ function AttendanceCalendarView({ records, currentYear, currentMonth, onMonthCha
 
       {/* Selected Day Details Modal */}
       {selectedDayRecords && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-800">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="glass-modal bg-white dark:bg-[#0f172a] rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                 Attendance Details: {selectedDayRecords.date}
               </h3>
               <button
                 onClick={() => setSelectedDayRecords(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -265,17 +265,17 @@ function AttendanceCalendarView({ records, currentYear, currentMonth, onMonthCha
 
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {selectedDayRecords.records.map((r) => (
-                <div key={r.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-1">
-                  <div className="flex justify-between font-bold text-slate-800">
+                <div key={r.id} className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-lg border border-slate-200 dark:border-slate-700 text-xs space-y-1">
+                  <div className="flex justify-between font-bold text-slate-800 dark:text-slate-200">
                     <span>{r.employee_name || 'Employee'} ({r.employee_code || r.employee_id})</span>
                     <StatusBadge status={r.status} />
                   </div>
-                  <div className="flex justify-between text-slate-600 pt-1">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400 pt-1">
                     <span>In: {r.check_in || '--'}</span>
                     <span>Out: {r.check_out || '--'}</span>
                   </div>
                   {r.remarks && (
-                    <div className="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200/60">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 italic pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
                       Remark: {r.remarks}
                     </div>
                   )}
@@ -286,7 +286,7 @@ function AttendanceCalendarView({ records, currentYear, currentMonth, onMonthCha
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setSelectedDayRecords(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg"
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-lg cursor-pointer"
               >
                 Close
               </button>
@@ -630,12 +630,12 @@ export default function AttendancePage() {
       )}
 
       {/* Header & Live Clock */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+      <div className="glass-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 dark:bg-slate-900/80 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
             {isAdmin ? 'Attendance Overview' : 'My Attendance'}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">{dateFormatted}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{dateFormatted}</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Admin Mark Attendance Override Button */}
@@ -645,16 +645,16 @@ export default function AttendancePage() {
                 setEditingRecord(null);
                 setAdminModalOpen(true);
               }}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
+              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 active:from-purple-800 active:to-indigo-800 text-white font-bold text-xs rounded-xl shadow-xs hover:shadow-sm transition-all flex items-center space-x-2 cursor-pointer"
             >
               <span>🛡️</span>
-              <span>Mark Attendance</span>
+              <span>Mark Attendance (Admin Override)</span>
             </button>
           )}
 
-          <div className="text-right">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Live Clock</span>
-            <span className="text-xl font-mono font-bold text-blue-600">{timeFormatted}</span>
+          <div className="text-right pl-2 border-l border-slate-200 dark:border-slate-800">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Live Clock</span>
+            <span className="text-xl font-mono font-bold text-blue-600 dark:text-blue-400">{timeFormatted}</span>
           </div>
           <button
             onClick={() => {
@@ -662,7 +662,7 @@ export default function AttendancePage() {
               fetchSummary();
               fetchHistory(pagination.page, filters);
             }}
-            className="p-2 text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
             title="Refresh Data"
           >
             &#8635;
@@ -672,11 +672,11 @@ export default function AttendancePage() {
 
       {/* Unlinked Employee Profile Warning Banner */}
       {isEmployee && !hasLinkedProfile && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 flex items-start gap-3 text-sm">
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-xl p-4 flex items-start gap-3 text-sm">
           <span className="text-lg">⚠️</span>
           <div>
             <p className="font-semibold">Account Not Linked</p>
-            <p className="text-xs text-amber-700 mt-0.5">
+            <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
               Your account is not linked to an employee profile. Check In and Check Out actions are disabled.
               Please contact your system administrator.
             </p>
@@ -689,8 +689,8 @@ export default function AttendancePage() {
         <div
           className={`p-4 rounded-xl border text-sm flex items-center justify-between transition-all ${
             feedback.type === 'success'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              : 'bg-rose-50 border-rose-200 text-rose-800'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+              : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200'
           }`}
         >
           <div className="flex items-center gap-2">
@@ -708,11 +708,11 @@ export default function AttendancePage() {
 
       {/* Employee Today's Attendance Card */}
       {isEmployee && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
-              <h2 className="text-base font-bold text-slate-800">Today's Attendance Status</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Server time records attendance status</p>
+              <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Today's Attendance Status</h2>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Server time records attendance status</p>
             </div>
             {todayLoading ? (
               <span className="text-xs text-slate-400 animate-pulse">Loading status...</span>
@@ -723,23 +723,23 @@ export default function AttendancePage() {
 
           {/* Time & Duration Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-            <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block">Check-In Time</span>
-              <span className="text-lg font-bold text-slate-700 mt-1 block">
+            <div className="bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/60">
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Check-In Time</span>
+              <span className="text-lg font-extrabold text-slate-700 dark:text-slate-200 mt-1 block">
                 {formatTimeString(todayRecord?.check_in)}
               </span>
             </div>
 
-            <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block">Check-Out Time</span>
-              <span className="text-lg font-bold text-slate-700 mt-1 block">
+            <div className="bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/60">
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Check-Out Time</span>
+              <span className="text-lg font-extrabold text-slate-700 dark:text-slate-200 mt-1 block">
                 {formatTimeString(todayRecord?.check_out)}
               </span>
             </div>
 
-            <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100">
-              <span className="text-xs font-medium text-blue-500 uppercase tracking-wider block">Working Duration</span>
-              <span className="text-lg font-bold text-blue-700 mt-1 block font-mono">
+            <div className="bg-blue-50/50 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-100 dark:border-blue-900/50">
+              <span className="text-xs font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wider block">Working Duration</span>
+              <span className="text-lg font-extrabold text-blue-700 dark:text-blue-300 mt-1 block font-mono">
                 {currentDuration}
               </span>
             </div>
@@ -791,9 +791,9 @@ export default function AttendancePage() {
 
           {/* Shift Complete Status */}
           {isCheckedOut && (
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Shift Completed</span>
-              <p className="text-sm font-bold text-slate-700 mt-0.5">You have checked out for today. See you tomorrow!</p>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-center">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Shift Completed</span>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mt-0.5">You have checked out for today. See you tomorrow!</p>
             </div>
           )}
 
@@ -801,7 +801,7 @@ export default function AttendancePage() {
           <div className="pt-2 flex justify-end">
             <button
               onClick={() => setHelpModalOpen(true)}
-              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800/60 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               <span>💬</span>
               <span>Need Help / Having Issues?</span>
@@ -814,34 +814,34 @@ export default function AttendancePage() {
       {isEmployee && (
         <div className="space-y-4">
           {/* Main Wallet Banner */}
-          <div className="bg-gradient-to-br from-amber-50 via-amber-100/40 to-orange-50 border border-amber-200/80 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-gradient-to-br from-amber-50 via-amber-100/40 to-orange-50 dark:from-amber-950/30 dark:via-amber-900/20 dark:to-orange-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl font-bold shadow-sm shrink-0">
                 🪙
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-bold text-slate-800 text-base">Extra Hours Reward Wallet</h3>
-                  <span className="bg-amber-200/80 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">Extra Hours Reward Wallet</h3>
+                  <span className="bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-700">
                     Active
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-0.5">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   Earn points automatically for every verified extra hour worked beyond standard shift duration.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 shrink-0">
-              <div className="text-right border-r border-amber-200 pr-4">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">Available Balance</span>
-                <span className="text-2xl font-extrabold text-amber-600 font-mono">
-                  {rewardAccount?.points_balance ?? 0} <span className="text-xs font-semibold text-amber-700">pts</span>
+              <div className="text-right border-r border-amber-200 dark:border-amber-800/60 pr-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400 block">Available Balance</span>
+                <span className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 font-mono">
+                  {rewardAccount?.points_balance ?? 0} <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">pts</span>
                 </span>
               </div>
-              <div className="text-right border-r border-amber-200 pr-4">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Total Earned</span>
-                <span className="text-base font-bold text-slate-700 font-mono">
+              <div className="text-right border-r border-amber-200 dark:border-amber-800/60 pr-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Total Earned</span>
+                <span className="text-base font-bold text-slate-700 dark:text-slate-200 font-mono">
                   {rewardAccount?.total_earned ?? 0} pts
                 </span>
               </div>
@@ -859,19 +859,19 @@ export default function AttendancePage() {
           {/* Grid: Weekly Points Chart (Real DB Data) + Device Authenticator Status */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Real Data Points Chart (7 / 30 / 90 Days) */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-100 gap-2">
+            <div className="lg:col-span-2 glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-2">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-800 flex items-center space-x-2">
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
                     <span>Points History Chart</span>
-                    <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">Real DB Data</span>
+                    <span className="text-[10px] bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-bold">Real DB Data</span>
                   </h4>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-400">
                     Points earned per individual calendar day (including zero-point days)
                   </p>
                 </div>
 
-                <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
+                <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
                   {[7, 30, 90].map((d) => (
                     <button
                       key={d}
@@ -881,8 +881,8 @@ export default function AttendancePage() {
                       }}
                       className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                         historyDays === d
-                          ? 'bg-white text-blue-600 shadow-2xs'
-                          : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                       }`}
                     >
                       {d} Days
@@ -892,9 +892,9 @@ export default function AttendancePage() {
               </div>
 
               {/* Total for period */}
-              <div className="flex items-center justify-between bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-100 text-xs">
-                <span className="text-slate-600 font-medium">Points earned in selected {historyDays}-day window:</span>
-                <span className="font-mono font-bold text-blue-600 text-sm">
+              <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 px-4 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 text-xs">
+                <span className="text-slate-600 dark:text-slate-300 font-medium">Points earned in selected {historyDays}-day window:</span>
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm">
                   {pointsHistory?.total_period_earned ?? 0} pts
                 </span>
               </div>
@@ -902,17 +902,17 @@ export default function AttendancePage() {
               {/* Chart Bars */}
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {!pointsHistory?.history || pointsHistory.history.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-6 text-center">No points earned in this period.</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 py-6 text-center">No points earned in this period.</p>
                 ) : (
                   pointsHistory.history.map((item) => {
                     const maxPts = Math.max(...pointsHistory.history.map((h) => h.points), 100);
                     const pct = Math.min(100, Math.round((item.points / maxPts) * 100));
                     return (
                       <div key={item.date} className="flex items-center space-x-3 text-xs">
-                        <span className="w-24 text-slate-600 font-medium shrink-0 truncate">
-                          {item.day_name.slice(0, 3)} <span className="text-[10px] text-slate-400">{item.date.slice(5)}</span>
+                        <span className="w-24 text-slate-600 dark:text-slate-400 font-medium shrink-0 truncate">
+                          {item.day_name.slice(0, 3)} <span className="text-[10px] text-slate-400 dark:text-slate-500">{item.date.slice(5)}</span>
                         </span>
-                        <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-300 ${
                               item.points > 0 ? 'bg-amber-500' : 'bg-transparent'
@@ -920,7 +920,7 @@ export default function AttendancePage() {
                             style={{ width: `${item.points > 0 ? Math.max(pct, 5) : 0}%` }}
                           ></div>
                         </div>
-                        <span className="w-16 text-right font-mono font-bold text-slate-700 shrink-0">
+                        <span className="w-16 text-right font-mono font-bold text-slate-700 dark:text-slate-200 shrink-0">
                           {item.points} pts
                         </span>
                       </div>
@@ -931,31 +931,31 @@ export default function AttendancePage() {
             </div>
 
             {/* Device Authenticator (WebAuthn) Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3 flex flex-col justify-between">
+            <div className="glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs space-y-3 flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <h4 className="text-sm font-bold text-slate-800">🔐 Device Passkey</h4>
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">🔐 Device Passkey</h4>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    hasAuthenticator ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
+                    hasAuthenticator ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                   }`}>
                     {hasAuthenticator ? 'Supported' : 'Unavailable'}
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                   WebAuthn enables biometric login (Touch ID, Windows Hello, Face ID, Android Biometrics, or device PIN). No raw biometric data is ever stored on servers.
                 </p>
 
-                <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
+                <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">Platform Sensor:</span>
-                    <span className="font-bold text-slate-800">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
                       {hasAuthenticator ? '✅ Available' : '❌ Not Detected'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">Attendance Rule:</span>
-                    <span className="text-[10px] font-mono text-blue-600">
+                    <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">
                       {hasAuthenticator ? 'Passkey + QR + GPS' : 'QR + GPS (Bypass)'}
                     </span>
                   </div>
@@ -977,29 +977,28 @@ export default function AttendancePage() {
         </div>
       )}
 
-
       {/* Rewards Catalog Redemption Modal */}
       {rewardModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-amber-50/50">
+          <div className="glass-modal bg-white dark:bg-[#0f172a] rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-amber-50/50 dark:bg-amber-950/40">
               <div className="flex items-center space-x-3">
                 <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg">
                   🎁
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800 text-base">Employee Rewards Catalog</h3>
-                  <p className="text-xs text-slate-500">Your Balance: <strong className="text-amber-600">{rewardAccount?.points_balance ?? 0} pts</strong></p>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">Employee Rewards Catalog</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Your Balance: <strong className="text-amber-600 dark:text-amber-400">{rewardAccount?.points_balance ?? 0} pts</strong></p>
                 </div>
               </div>
-              <button onClick={() => setRewardModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">
+              <button onClick={() => setRewardModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold cursor-pointer">
                 ✕
               </button>
             </div>
 
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               {rewardsCatalog.length === 0 ? (
-                <p className="text-center text-slate-400 py-8 text-sm">No rewards currently available in catalog.</p>
+                <p className="text-center text-slate-400 dark:text-slate-500 py-8 text-sm">No rewards currently available in catalog.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {rewardsCatalog.map((item) => {
@@ -1007,19 +1006,19 @@ export default function AttendancePage() {
                     const hasStock = item.stock_quantity > 0;
                     const isLoadingThis = redeemLoadingId === item.id;
                     return (
-                      <div key={item.id} className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs space-y-2 flex flex-col justify-between">
+                      <div key={item.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 shadow-2xs space-y-2 flex flex-col justify-between">
                         <div>
                           <div className="flex items-start justify-between">
-                            <h4 className="font-bold text-slate-800 text-sm">{item.title}</h4>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">{item.title}</h4>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                               {item.points_cost} pts
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 mt-1">{item.description}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.description}</p>
                         </div>
 
-                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[11px] text-slate-400 font-medium">
+                        <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">
                             Stock: {item.stock_quantity} left
                           </span>
 
@@ -1029,7 +1028,7 @@ export default function AttendancePage() {
                             className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${
                               canAfford && hasStock && !isLoadingThis
                                 ? 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer shadow-2xs'
-                                : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed'
                             }`}
                           >
                             {isLoadingThis ? 'Redeeming...' : !hasStock ? 'Out of Stock' : !canAfford ? 'Need More Points' : 'Redeem Now'}
@@ -1042,10 +1041,10 @@ export default function AttendancePage() {
               )}
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
               <button
                 onClick={() => setRewardModalOpen(false)}
-                className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
               >
                 Close Catalog
               </button>
@@ -1057,52 +1056,52 @@ export default function AttendancePage() {
       {/* Personal Summary Cards */}
       {isEmployee && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs">
-            <span className="text-xs text-slate-400 font-medium block">Total Days</span>
-            <span className="text-2xl font-bold text-slate-800 mt-1 block">{summary?.total_records ?? 0}</span>
+          <div className="glass-card bg-white/90 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 text-center shadow-2xs">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Days</span>
+            <span className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1 block">{summary?.total_records ?? 0}</span>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs border-l-4 border-l-emerald-500">
-            <span className="text-xs text-slate-400 font-medium block">Present</span>
-            <span className="text-2xl font-bold text-emerald-600 mt-1 block">{summary?.present_count ?? 0}</span>
+          <div className="glass-card bg-white/90 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 text-center shadow-2xs border-l-4 border-l-emerald-500">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Present</span>
+            <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 block">{summary?.present_count ?? 0}</span>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs border-l-4 border-l-amber-500">
-            <span className="text-xs text-slate-400 font-medium block">Late</span>
-            <span className="text-2xl font-bold text-amber-600 mt-1 block">{summary?.late_count ?? 0}</span>
+          <div className="glass-card bg-white/90 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 text-center shadow-2xs border-l-4 border-l-amber-500">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Late</span>
+            <span className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1 block">{summary?.late_count ?? 0}</span>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs border-l-4 border-l-indigo-500">
-            <span className="text-xs text-slate-400 font-medium block">Half Day</span>
-            <span className="text-2xl font-bold text-indigo-600 mt-1 block">{summary?.half_day_count ?? 0}</span>
+          <div className="glass-card bg-white/90 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 text-center shadow-2xs border-l-4 border-l-indigo-500">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Half Day</span>
+            <span className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-1 block">{summary?.half_day_count ?? 0}</span>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs border-l-4 border-l-rose-500">
-            <span className="text-xs text-slate-400 font-medium block">Absent</span>
-            <span className="text-2xl font-bold text-rose-600 mt-1 block">{summary?.absent_count ?? 0}</span>
+          <div className="glass-card bg-white/90 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 text-center shadow-2xs border-l-4 border-l-rose-500">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Absent</span>
+            <span className="text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 block">{summary?.absent_count ?? 0}</span>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs border-l-4 border-l-purple-500">
-            <span className="text-xs text-slate-400 font-medium block">Attendance %</span>
-            <span className="text-2xl font-bold text-purple-600 mt-1 block">{summary?.attendance_percentage ?? 0}%</span>
+          <div className="glass-card bg-white/90 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 text-center shadow-2xs border-l-4 border-l-purple-500">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Attendance %</span>
+            <span className="text-2xl font-extrabold text-purple-600 dark:text-purple-400 mt-1 block">{summary?.attendance_percentage ?? 0}%</span>
           </div>
         </div>
       )}
 
       {/* Attendance Records Section */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
+      <div className="glass-card bg-white/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
-            <h2 className="text-base font-bold text-slate-800">
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
               {isAdmin ? 'All Employee Attendance Records' : 'My Attendance History'}
             </h2>
 
             {/* View Mode Toggle Button */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold">
               <button
                 onClick={() => setViewMode('table')}
                 className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                  viewMode === 'table' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                  viewMode === 'table' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-400 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
                 📋 Table
@@ -1110,7 +1109,7 @@ export default function AttendancePage() {
               <button
                 onClick={() => setViewMode('calendar')}
                 className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                  viewMode === 'calendar' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                  viewMode === 'calendar' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-400 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
                 📅 Calendar
@@ -1124,7 +1123,7 @@ export default function AttendancePage() {
               type="date"
               value={filters.start_date}
               onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value }))}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700"
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
               placeholder="Start Date"
             />
             <span className="text-xs text-slate-400">to</span>
@@ -1132,13 +1131,13 @@ export default function AttendancePage() {
               type="date"
               value={filters.end_date}
               onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value }))}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700"
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
               placeholder="End Date"
             />
             <select
               value={filters.status}
               onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700"
+              className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
             >
               <option value="">All Statuses</option>
               <option value="present">Present</option>
@@ -1149,7 +1148,7 @@ export default function AttendancePage() {
             {(filters.start_date || filters.end_date || filters.status) && (
               <button
                 onClick={() => setFilters({ start_date: '', end_date: '', status: '' })}
-                className="text-xs text-blue-600 hover:underline px-2 py-1 cursor-pointer"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
               >
                 Clear
               </button>
@@ -1186,7 +1185,7 @@ export default function AttendancePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead>
-                  <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50">
+                  <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/60">
                     <th className="py-3 px-4">Date</th>
                     {isAdmin && <th className="py-3 px-4">Employee</th>}
                     <th className="py-3 px-4">Check In</th>
@@ -1198,42 +1197,42 @@ export default function AttendancePage() {
                     {isAdmin && <th className="py-3 px-4 text-right">Actions</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                   {tableLoading ? (
                     [...Array(5)].map((_, i) => (
                       <tr key={i} className="animate-pulse">
-                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-24" /></td>
-                        {isAdmin && <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-32" /></td>}
-                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16" /></td>
-                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16" /></td>
-                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
-                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16" /></td>
-                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
-                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
-                        {isAdmin && <td className="py-3 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-14 ml-auto" /></td>}
+                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24" /></td>
+                        {isAdmin && <td className="py-3 px-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32" /></td>}
+                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16" /></td>
+                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16" /></td>
+                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20" /></td>
+                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16" /></td>
+                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20" /></td>
+                        <td className="py-3 px-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20" /></td>
+                        {isAdmin && <td className="py-3 px-4 text-right"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-14 ml-auto" /></td>}
                       </tr>
                     ))
                   ) : records.length > 0 ? (
                     records.map((rec) => (
-                      <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3 px-4 font-medium text-slate-700">{rec.attendance_date}</td>
+                      <tr key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="py-3 px-4 font-medium text-slate-700 dark:text-slate-200">{rec.attendance_date}</td>
                         {isAdmin && (
-                          <td className="py-3 px-4 font-medium text-slate-800">
-                            {rec.employee_name} <span className="text-xs text-slate-400">({rec.employee_code})</span>
+                          <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-100">
+                            {rec.employee_name} <span className="text-xs text-slate-400 dark:text-slate-500">({rec.employee_code})</span>
                           </td>
                         )}
-                        <td className="py-3 px-4 text-slate-600">{formatTimeString(rec.check_in)}</td>
-                        <td className="py-3 px-4 text-slate-600">{formatTimeString(rec.check_out)}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{formatTimeString(rec.check_in)}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{formatTimeString(rec.check_out)}</td>
                         <td className="py-3 px-4">
                           <StatusBadge status={rec.status} />
                         </td>
-                        <td className="py-3 px-4 font-mono text-xs text-slate-600">
+                        <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-300">
                           {formatWorkingDuration(rec.check_in, rec.check_out)}
                         </td>
                         <td className="py-3 px-4">
                           <VerificationBadge method={rec.verification_method} />
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-500 italic max-w-xs truncate" title={rec.remarks || ''}>
+                        <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400 italic max-w-xs truncate" title={rec.remarks || ''}>
                           {rec.remarks || '—'}
                         </td>
                         {isAdmin && (
@@ -1243,7 +1242,7 @@ export default function AttendancePage() {
                                 setEditingRecord(rec);
                                 setAdminModalOpen(true);
                               }}
-                              className="px-2.5 py-1 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors cursor-pointer"
+                              className="px-2.5 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 rounded-lg transition-colors cursor-pointer"
                               title="Modify Attendance via Admin Override"
                             >
                               ✏️ Override
@@ -1254,8 +1253,16 @@ export default function AttendancePage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={isAdmin ? 9 : 7} className="py-8 text-center text-slate-400 text-sm">
-                        No attendance records found.
+                      <td colSpan={isAdmin ? 9 : 7} className="py-14 text-center">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center text-xl mx-auto mb-3">
+                          📅
+                        </div>
+                        <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">No attendance records found</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+                          {filters.start_date || filters.end_date || filters.status
+                            ? 'Try clearing or widening your date and status filters above.'
+                            : 'No attendance logs have been recorded for this view yet.'}
+                        </p>
                       </td>
                     </tr>
                   )}
@@ -1265,7 +1272,7 @@ export default function AttendancePage() {
 
             {/* Pagination Footer */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
                 <span>
                   Showing Page <strong>{pagination.page}</strong> of <strong>{pagination.totalPages}</strong> ({pagination.total} records total)
                 </span>
@@ -1273,14 +1280,14 @@ export default function AttendancePage() {
                   <button
                     onClick={() => fetchHistory(pagination.page - 1, filters)}
                     disabled={pagination.page <= 1 || tableLoading}
-                    className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => fetchHistory(pagination.page + 1, filters)}
                     disabled={pagination.page >= pagination.totalPages || tableLoading}
-                    className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Next
                   </button>

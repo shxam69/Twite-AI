@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS employees (
   employee_id VARCHAR(20) NOT NULL UNIQUE,
   name VARCHAR(100) NOT NULL,
   email VARCHAR(100) NOT NULL UNIQUE,
-  mobile VARCHAR(20) NOT NULL,
+  mobile VARCHAR(20) NULL,
   department VARCHAR(50) NOT NULL,
   designation VARCHAR(50) NOT NULL,
   status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
