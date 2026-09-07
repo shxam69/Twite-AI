@@ -130,7 +130,7 @@ export default function LoginPage() {
 
         <div className="mt-8 pt-6 border-t border-slate-800/80 text-center">
           <p className="text-xs text-slate-500 font-medium">
-            Technical Assessment &bull; Secure JWT Authentication
+            AttendanceMS Enterprise Platform &bull; Secure Portal
           </p>
         </div>
       </div>

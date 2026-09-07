@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -27,8 +27,8 @@ export default function MainLayout() {
         {/* Application footer */}
         <footer className="bg-white border-t border-slate-200 py-3.5 px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>Mini Attendance Management System &bull; Junior SE Assessment</span>
-            <span className="text-slate-400">Secure JWT Session &bull; MySQL Relational DB</span>
+            <span>AttendanceMS Workforce Platform</span>
+            <span className="text-slate-400">Enterprise Attendance &bull; Real-time Verification</span>
           </div>
         </footer>
       </div>

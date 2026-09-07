@@ -555,7 +555,7 @@ export default function AttendancePage() {
           {isNotCheckedIn && hasLinkedProfile && (
             <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-blue-200 block">Phase 8C Verification</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-blue-200 block">Dynamic QR Verification</span>
                 <p className="text-base font-bold">Check In with Dynamic Rotating QR Code</p>
                 <p className="text-xs text-blue-100">Scans office QR code & verifies workplace GPS geofence.</p>
               </div>

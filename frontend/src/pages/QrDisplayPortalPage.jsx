@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { generateQrCode } from '../services/api';
 
 export default function QrDisplayPortalPage() {
+  const navigate = useNavigate();
   const [statusState, setStatusState] = useState('IDLE'); // 'IDLE' | 'ACTIVE' | 'EXPIRED'
   const [qrData, setQrData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,7 @@ export default function QrDisplayPortalPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex flex-col justify-between bg-slate-950 text-white rounded-3xl p-6 sm:p-10 shadow-2xl border border-slate-800 relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col justify-between bg-slate-950 text-white p-6 sm:p-10 relative overflow-hidden select-none">
       {/* Background Ambient Glows */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -80,12 +82,12 @@ export default function QrDisplayPortalPage() {
             </svg>
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Office Attendance Terminal</h1>
-            <p className="text-xs text-slate-400">Scan QR Code using your Employee Mobile Portal</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Office Attendance Kiosk</h1>
+            <p className="text-xs text-slate-400">Scan QR Code using your Employee Mobile App</p>
           </div>
         </div>
 
-        {/* Status Badge & Fullscreen controls */}
+        {/* Status Badge, Navigation & Fullscreen controls */}
         <div className="flex items-center space-x-3">
           <div className={`px-3 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wider flex items-center space-x-2 ${
             statusState === 'ACTIVE'
@@ -105,9 +107,20 @@ export default function QrDisplayPortalPage() {
           </div>
 
           <button
+            onClick={() => navigate('/dashboard')}
+            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-colors flex items-center space-x-1.5 cursor-pointer"
+            title="Return to Admin Dashboard"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Back to Admin</span>
+          </button>
+
+          <button
             onClick={toggleFullscreen}
-            className="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-300 transition-colors"
-            title="Toggle Fullscreen"
+            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-300 transition-colors cursor-pointer"
+            title="Toggle Fullscreen Mode"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -147,16 +160,16 @@ export default function QrDisplayPortalPage() {
               </svg>
             </div>
             <div>
-              <h2 className="text-3xl font-extrabold text-white tracking-tight">Attendance QR Code Portal</h2>
+              <h2 className="text-3xl font-extrabold text-white tracking-tight">Attendance Kiosk Terminal</h2>
               <p className="text-slate-400 text-sm mt-2 leading-relaxed">
-                Click below to initialize the rotating cryptographic challenge. Once active, employees can scan the code with their mobile devices to check in.
+                Click below to initialize the dynamic rotating QR code challenge for employee attendance check-in.
               </p>
             </div>
             <button
               onClick={handleGenerateQr}
               className="px-8 py-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-lg rounded-2xl transition-all shadow-xl hover:shadow-blue-600/30 transform hover:-translate-y-0.5 cursor-pointer"
             >
-              Generate QR
+              Start QR Kiosk Terminal
             </button>
           </div>
         ) : statusState === 'ACTIVE' && qrData ? (
@@ -186,13 +199,13 @@ export default function QrDisplayPortalPage() {
               ></div>
             </div>
 
-            {/* Scannable QR Container */}
-            <div className="bg-white p-7 rounded-3xl border-4 border-blue-500/20 shadow-2xl inline-block">
+            {/* Scannable High-Contrast QR Container */}
+            <div className="bg-white p-7 rounded-3xl border-4 border-blue-500/30 shadow-2xl inline-block">
               <QRCodeSVG
                 value={qrData.token}
                 size={280}
                 bgColor="#FFFFFF"
-                fgColor="#0F172A"
+                fgColor="#000000"
                 level="H"
                 includeMargin={true}
               />
@@ -234,13 +247,13 @@ export default function QrDisplayPortalPage() {
         ) : null}
       </div>
 
-      {/* Footer Instructions */}
+      {/* Footer Information */}
       <div className="border-t border-slate-800/80 pt-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 relative z-10 gap-2">
         <div className="flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-          <span>Geofence & Replay Protection Enforced</span>
+          <span>✓ Secure Attendance Session &bull; Geofence & Replay Protection Enabled</span>
         </div>
-        <span>Attendance System v1.0 • Phase 8C</span>
+        <span>AttendanceMS Workforce Platform</span>
       </div>
     </div>
   );

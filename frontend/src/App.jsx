@@ -24,6 +24,11 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register/employee/:token" element={<EmployeeRegistrationPage />} />
 
+          {/* Standalone Kiosk Route (Admin only, outside MainLayout) */}
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+            <Route path="/qr-display" element={<QrDisplayPortalPage />} />
+          </Route>
+
           {/* Authenticated Application Shell (With Sidebar & Header) */}
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
@@ -33,7 +38,6 @@ export default function App() {
               <Route path="/attendance/corrections" element={<AttendanceCorrectionsPage />} />
               <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                 <Route path="/employees" element={<EmployeesPage />} />
-                <Route path="/qr-display" element={<QrDisplayPortalPage />} />
                 <Route path="/attendance/qr" element={<Navigate to="/qr-display" replace />} />
                 <Route path="/admin/help-requests" element={<AdminHelpRequestsPage />} />
                 <Route path="/admin/audit-log" element={<AuditTimelinePage />} />

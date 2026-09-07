@@ -1,18 +1,17 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 
-const backendPublicUrl = process.env.BACKEND_PUBLIC_URL || process.env.RENDER_EXTERNAL_URL;
+const backendPublicUrl = process.env.BACKEND_PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || 'https://twite-ai-1.onrender.com';
 
-const servers = [];
-if (backendPublicUrl) {
-  servers.push({
+const servers = [
+  {
     url: backendPublicUrl.replace(/\/+$/, ''),
     description: 'Production API (Render)',
-  });
-}
-servers.push({
-  url: 'http://localhost:5000',
-  description: 'Local Development Server',
-});
+  },
+  {
+    url: 'http://localhost:5000',
+    description: 'Local Development Server',
+  },
+];
 
 const options = {
   definition: {

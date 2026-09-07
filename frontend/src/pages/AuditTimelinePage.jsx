@@ -79,7 +79,7 @@ export default function AuditTimelinePage() {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Attendance Audit Timeline</h1>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Attendance Audit Log</h1>
             <p className="text-xs text-slate-500">Traceable immutable security event logs & audit history</p>
           </div>
         </div>

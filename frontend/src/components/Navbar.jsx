@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -32,7 +32,7 @@ export default function Navbar() {
                 AttendanceMS
               </span>
               <span className="text-xs text-slate-400 block -mt-1 font-medium">
-                Technical Assessment
+                Workforce Platform
               </span>
             </div>
           </div>

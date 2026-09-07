@@ -58,7 +58,7 @@ export default function Header({ onToggleSidebar }) {
     if (path.includes('help-requests')) return 'Help Requests';
     if (path.includes('leaves')) return 'Leave Management';
     if (path.includes('corrections')) return 'Attendance Corrections';
-    if (path.includes('audit-log')) return 'Audit Timeline Log';
+    if (path.includes('audit-log')) return 'Audit Log';
     if (path.includes('attendance/settings')) return 'Attendance Settings';
     if (path.includes('attendance')) return 'Attendance Tracking';
     return 'Attendance Management';
@@ -89,7 +89,7 @@ export default function Header({ onToggleSidebar }) {
             {getPageTitle()}
           </h1>
           <p className="hidden sm:block text-xs text-slate-400">
-            Overview &bull; Twite AI Tech Assessment Portal
+            Overview &bull; Workforce Attendance Platform
           </p>
         </div>
       </div>
